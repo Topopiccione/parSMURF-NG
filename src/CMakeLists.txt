@@ -1,13 +1,11 @@
 # parSMURFng
 # 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
-
-project(parSMURF)
+project(parSMURFng)
 cmake_minimum_required(VERSION 3.0.2)
 
+# This time, MPI is a requirement of the project
 find_package(MPI)
-if (MPI_FOUND)
-	include_directories(${MPI_INCLUDE_PATH})
-endif()
+include_directories(${MPI_INCLUDE_PATH})
 
 add_subdirectory(ann_1.1.2)
 add_subdirectory(jsoncons)
@@ -32,7 +30,7 @@ SET(SRCCOMMON				"ArgHandler_new.cpp"
 							"curves.cpp"
 							#"folds.cpp"
 							#"testtraindivider.cpp"
-							"HyperSMURFUtils.cpp"
+							"parSMURFUtils.cpp"
 							#"partition.cpp"
 							#"sampler.cpp"
 							"rfRanger.cpp"
@@ -48,13 +46,6 @@ SET(SOURCESMAIN				"parSMURFng.cpp"
 						#"hyperSMURF.cpp"
 					)
 
-SET(SOURCESGRDMPI			#"parSMURF_MPI.cpp"
-							#"hyperSMURF_MPI.cpp"
-							#"MPIHelper.cpp"
-							#"partitionMPI.cpp"
-							#"samplerKNNMPI.cpp"
-						#"sendRecvThrd.cpp"
-					)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
@@ -71,32 +62,13 @@ ADD_CUSTOM_TARGET(release
 	COMMENT "Switch CMAKE_BUILD_TYPE to Release"
 )
 
-add_executable(parSMURFng ${SRCCOMMON} ${RANGER} ${SOURCESMAIN})
+add_executable(parSMURFng ${SRCCOMMON} ${RANGER} ${SOURCESMAIN} ${LOGGERSRC})
 add_dependencies(parSMURFng ANN)
 add_dependencies(parSMURFng jsoncons)
 add_dependencies(parSMURFng zlib)
 add_dependencies(parSMURFng easyloggingpp)
 
-# if (MPI_FOUND)
-#
-# 	add_executable(parSMURFn ${SRCCOMMON} ${RANGER} ${SOURCESGRDMPI} ${LOGGERSRC})
-# 	add_dependencies(parSMURFn ANN)
-# 	add_dependencies(parSMURFn jsoncons)
-# 	add_dependencies(parSMURFn zlib)
-# 	add_dependencies(parSMURFn easyloggingpp)
-#
-# 	if(MPI_COMPILE_FLAGS)
-# 		set_target_properties(parSMURFn PROPERTIES
-# 			COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-# 	endif()
-#
-# 	if(MPI_LINK_FLAGS)
-# 		set_target_properties(parSMURFn PROPERTIES
-# 			LINK_FLAGS "${MPI_LINK_FLAGS}")
-# 	endif()
-# endif()
-
-target_link_libraries(parSMURFng ANN ${zlib_LIB})
-# if (MPI_FOUND)
-# 	target_link_libraries(parSMURFn ANN ${zlib_LIB} ${MPI_LIBRARIES})
-# endif()
+## Per MPI
+set_target_properties(parSMURFng PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+set_target_properties(parSMURFng PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
+target_link_libraries(parSMURFng ANN ${zlib_LIB} ${MPI_LIBRARIES})

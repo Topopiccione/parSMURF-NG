@@ -8,12 +8,12 @@ MegaCache::MegaCache(const int rank, std::string dataFileName, std::string label
 
 	// Label and folds import are managed through STL I/O functions
 	// Data access is done by MPI I/O primitives
-	std::thread t1 = std::thread( detectNumberOfFeatures );
-	std::thread t2 = std::thread( loadLabels, std::ref(labels), &n );
+	std::thread t1( &MegaCache::detectNumberOfFeatures, this );
+	std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
 	std::thread t3;
 	size_t tempVal;
 	if (!foldFilename.empty())
-		t3 = std::thread( loadLabels, std::ref(labels), &tempVal, &nFolds );
+		t3 = std::thread( &MegaCache::loadFolds, this, std::ref(folds), &tempVal, &nFolds );
 
 	t1.join();
 	t2.join();
@@ -24,6 +24,7 @@ MegaCache::MegaCache(const int rank, std::string dataFileName, std::string label
 		std::cout << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML << std::endl;
 
 
+	cacheReady = true;
 
 }
 
@@ -35,7 +36,7 @@ MegaCache::~MegaCache() {}
 void MegaCache::detectNumberOfFeatures() {
 	std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
 	if (!dataFile)
-		throw std::runtime_error( "Error opening data file." );
+		throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
 
 	// 1) detecting the number of columns
 	std::cout << TXT_BIBLU << "Detecting the number of features from data..." << TXT_NORML << std::endl;
@@ -61,14 +62,14 @@ void MegaCache::detectNumberOfFeatures() {
 	featuresDetected = true;
 }
 
-void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead) {
+void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, size_t * nPos) {
 	size_t con = 0;
 	uint8_t inData;
 	dstVect.clear();
 
 	std::ifstream labelFile( labelFilename.c_str(), std::ios::in );
 	if (!labelFile)
-		throw std::runtime_error( "Error opening label file." );
+		throw std::runtime_error( TXT_BIRED + std::string("Error opening label file.") + TXT_NORML );
 
 	std::cout << TXT_BIBLU << "Reading label file..." << TXT_NORML << std::endl;
 	while (labelFile >> inData) {
@@ -78,6 +79,8 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead) {
 	std::cout << TXT_BIGRN << con << " labels read" << TXT_NORML << std::endl;
 	*valsRead = con;
 	labelFile.close();
+
+	*nPos = (size_t) std::count( dstVect.begin(), dstVect.end(), 1 );
 
 	labelsImported = true;
 }
@@ -89,7 +92,7 @@ void MegaCache::loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint
 
 	std::ifstream foldFile( foldFilename.c_str(), std::ios::in );
 	if (!foldFile)
-		throw std::runtime_error( "Error opening fold file." );
+		throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
 
 	std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
 	*nFolds = 0;
@@ -102,8 +105,6 @@ void MegaCache::loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint
 	(*nFolds)++;
 	std::cout << TXT_BIGRN << "Total number of folds: " << *nFolds << TXT_NORML << std::endl;
 	foldFile.close();
-	// if (con != n)
-	// 	std::cout << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!\033[0m" << std::endl;
 
 	foldsImported = true;
 }

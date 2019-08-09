@@ -8,7 +8,7 @@
 #include <thread>
 #include <mpi.h>
 
-#include "parSMURFutils.h"
+#include "parSMURFUtils.h"
 #include "easylogging++.h"
 
 class MegaCache {
@@ -22,7 +22,7 @@ public:
 	int						rank;
 	size_t					m;				// number of features
 	size_t					n;				// number of examples
-	size_t					nFolds;			// number of folds
+	uint8_t					nFolds;			// number of folds
 	bool					labelsImported;
 	bool					foldsImported;
 	bool					featuresDetected;
@@ -30,8 +30,8 @@ public:
 
 private:
 	void preloadAndPrepare();
-	void loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead);
-	void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead);
+	void loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, size_t * nPos);
+	void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds);
 	void detectNumberOfFeatures();
 
 	std::string				dataFilename;
