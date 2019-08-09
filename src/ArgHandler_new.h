@@ -30,9 +30,6 @@ public:
 	std::string		timeFilename;
 	std::string		extConfigFilename;
 
-	uint32_t		m;
-	uint32_t		n;
-	double			prob;
 	uint32_t		nFolds;
 	uint32_t		seed;
 	uint32_t		verboseLevel;
@@ -43,9 +40,7 @@ public:
 
 	bool			generateRandomFold;
 	bool			readNFromFile;
-	bool			simulate;
 	bool			verboseMPI;
-	bool			noMtSender;
 	bool			externalConfig;
 	bool			printCurrentConfig;
 

@@ -6,9 +6,9 @@
 ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams ) :
 		gridParams( gridParams ),
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), forestDirname( "" ), timeFilename( "" ), extConfigFilename( "" ),
-		m( 0 ), n( 0 ), prob( 0.0 ), seed( 0 ), verboseLevel(0),
+		seed( 0 ), verboseLevel(0),
 		ensThreads( 0 ), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ),
-		generateRandomFold( false ), readNFromFile( false ), simulate( false ), verboseMPI( false ), noMtSender( false ),
+		generateRandomFold( false ), readNFromFile( false ), verboseMPI( false ),
 		externalConfig( false ), printCurrentConfig( false ),
 		minFold( -1 ), maxFold( -1 ),
 		argc( argc ), argv( argv ), mode( "" ), optim( "" ) {
@@ -65,8 +65,10 @@ void ArgHandle::processCommandLine( int rank ) {
 			std::cout << TXT_BIYLW << "Parsing cfg file..." << TXT_NORML << std::endl;
 		jsonImport( extConfigFilename );
 	} else {
-		if ( rank == 0 )
-			std::cout << TXT_BIRED << "parSMURF requires a configuration file in json format (--cfg)." << TXT_NORML << std::endl;
+		if ( rank == 0 ) {
+			std::cout << TXT_BIRED << "parSMURFng requires a configuration file in json format (--cfg)." << TXT_NORML << std::endl;
+			displayHelp();
+		}
 		exit( -1 );
 	}
 
@@ -84,13 +86,11 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 
 	jsoncons::json	exec;
 	jsoncons::json	data;
-	jsoncons::json	simulateJ;
 	jsoncons::json	flds;
 	jsoncons::json	params;
 
 	exec				= getFromJson<jsoncons::json>( &jsCfg, "exec", NULL );
 	data				= getFromJson<jsoncons::json>( &jsCfg, "data", NULL );
-	simulateJ			= getFromJson<jsoncons::json>( &jsCfg, "simulate", NULL );
 	flds				= getFromJson<jsoncons::json>( &jsCfg, "folds", NULL );
 	params				= getFromJson<jsoncons::json>( &jsCfg, "params", NULL );
 
@@ -104,13 +104,6 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	if (savetime)
 		timeFilename	= getFromJson<std::string>( &exec, "timeFile", timeFilename );
 
-	simulate			= getFromJson<bool>( &simulateJ, "simulation", false );
-	if (simulate) {
-		m				= getFromJson<uint32_t>( &simulateJ, "m", m );
-		n				= getFromJson<uint32_t>( &simulateJ, "n", n );
-		prob			= getFromJson<double>( &simulateJ, "prob", prob );
-	}
-
 	nFolds				= getFromJson<uint32_t>( &flds, "nFolds", nFolds );
 	minFold				= getFromJson<uint32_t>( &flds, "startingFold", minFold );
 	maxFold				= getFromJson<uint32_t>( &flds, "endingFold", maxFold );
@@ -121,7 +114,6 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	rfThreads			= getFromJson<uint32_t>( &exec, "rfThrd", rfThreads );
 
 	verboseMPI			= getFromJson<bool>( &exec, "verboseMPI", verboseMPI );
-	noMtSender			= getFromJson<bool>( &exec, "noMtSender", noMtSender );
 	printCurrentConfig	= getFromJson<bool>( &exec, "printCfg", printCurrentConfig );
 	mode				= getFromJson<std::string>( &exec, "mode", mode );
 	optim				= getFromJson<std::string>( &exec, "optimizer", optim );
@@ -182,54 +174,36 @@ void ArgHandle::checkCommonConfig( int rank ) {
 		exit(-1);
 	}
 
-	if (simulate && ((m == 0) | (n == 0))) {
+
+	if (dataFilename.empty()) {
 		if (rank == 0)
-			std::cout << TXT_BIRED << "Simualtion enabled: specify m and n ('simulate':'m' and 'simulate':'n')." << TXT_NORML << std::endl;
+			std::cout << TXT_BIRED << "Matrix file undefined ('data':'dataFile')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
-	if (simulate && ((prob < 0) | (prob > 1))) {
+	if (labelFilename.empty()) {
 		if (rank == 0)
-			std::cout << TXT_BIRED << "Simulation: probabilty of positive class must be 0 < prob < 1." << TXT_NORML << std::endl;
+			std::cout << TXT_BIRED << "Label file undefined ('data':'labelFile')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
-	if (!simulate) {
-		if (dataFilename.empty()) {
-			if (rank == 0)
-				std::cout << TXT_BIRED << "Matrix file undefined ('data':'dataFile')." << TXT_NORML << std::endl;
-			exit(-1);
-		}
-
-		if (labelFilename.empty()) {
-			if (rank == 0)
-				std::cout << TXT_BIRED << "Label file undefined ('data':'labelFile')." << TXT_NORML << std::endl;
-			exit(-1);
-		}
-
-		if (foldFilename.empty()) {
-			if (rank == 0)
-				std::cout << TXT_BIYLW << "No fold file name defined. Random generation of folds enabled ('data':'foldFile')." << TXT_NORML;
-			generateRandomFold = true;
-			if (nFolds == 0) {
-				if (rank == 0)
-					std::cout << TXT_BIYLW << " [nFold = 3 as default ('folds':'nFolds')]" << TXT_NORML;
-				nFolds = 3;
-			}
-			std::cout << std::endl;
-		}
-
-		if (!foldFilename.empty() && (nFolds != 0)) {
-			if (rank == 0)
-				std::cout << TXT_BIYLW << "nFolds option ignored (mumble, mumble...)." << TXT_NORML << std::endl;
-		}
-	}
-
-	if (simulate & (nFolds == 0)) {
+	if (foldFilename.empty()) {
 		if (rank == 0)
-			std::cout << TXT_BIYLW << "No number of folds specified. Using default setting: 3 ('folds':'nFolds')." << TXT_NORML << std::endl;
-		nFolds = 3;
+			std::cout << TXT_BIYLW << "No fold file name defined. Random generation of folds enabled ('data':'foldFile')." << TXT_NORML;
+		generateRandomFold = true;
+		if (nFolds == 0) {
+			if (rank == 0)
+				std::cout << TXT_BIYLW << " [nFold = 3 as default ('folds':'nFolds')]" << TXT_NORML;
+			nFolds = 3;
+		}
+		std::cout << std::endl;
 	}
+
+	if (!foldFilename.empty() && (nFolds != 0)) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "nFolds option ignored (mumble, mumble...)." << TXT_NORML << std::endl;
+	}
+
 
 	if (((wmode == MODE_TRAIN) | (wmode == MODE_PREDICT)) & (forestDirname.length() == 0)) {
 		if (rank == 0)
@@ -378,11 +352,6 @@ void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
 	if (wmode == MODE_PREDICT)
 		std::cout << "  Predict mode" << std::endl;
 	std::cout << " --" << std::endl;
-	if (simulate)
-		std::cout << "  Simulated data with prob: " << prob << std::endl;
-	std::cout << "  n: " << n << std::endl;
-	std::cout << "  m: " << m << std::endl;
-	std::cout << " --" << std::endl;
 	std::cout << "  nFolds: " << nFolds << std::endl;
 	std::cout << " --" << std::endl;
 	std::cout << "  seed: " << seed << std::endl;
@@ -391,8 +360,6 @@ void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
 		std::cout << " Verbose MPI messages on" << std::endl;
 	std::cout << "  Hyper-ensemble threads: " << ensThreads << std::endl;
 	std::cout << "  Random forset threads: " << rfThreads << std::endl;
-	if (noMtSender)
-		std::cout << "  Single-threaded master MPI process" << std::endl;
 	if (woptimiz != OPT_NO) {
 		std::cout << " --" << std::endl;
 		std::cout << " -- Parameter optimization configurations --" << std::endl;
@@ -409,20 +376,19 @@ void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
 }
 
 void ArgHandle::printLogo() {
-	std::cout << "______________________________________________________________________" << std::endl << std::endl;
-	std::cout << "\033[38;5;214m ██████╗  █████╗ ██████╗ ███████╗███╗   ███╗██╗   ██╗██████╗ ███████╗\e[0m" << std::endl;
-	std::cout << "\033[38;5;215m ██╔══██╗██╔══██╗██╔══██╗██╔════╝████╗ ████║██║   ██║██╔══██╗██╔════╝\e[0m" << std::endl;
-	std::cout << "\033[38;5;216m ██████╔╝███████║██████╔╝███████╗██╔████╔██║██║   ██║██████╔╝█████╗\e[0m" << std::endl;
-	std::cout << "\033[38;5;217m ██╔═══╝ ██╔══██║██╔══██╗╚════██║██║╚██╔╝██║██║   ██║██╔══██╗██╔══╝\e[0m" << std::endl;
-	std::cout << "\033[38;5;218m ██║     ██║  ██║██║  ██║███████║██║ ╚═╝ ██║╚██████╔╝██║  ██║██║\e[0m" << std::endl;
-	std::cout << "\033[38;5;218m ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝\e[0m" << std::endl;
-	std::cout << "______________________________________________________________________" << std::endl << std::endl;
-	std::cout << "      AnacletoLab - Universita' degli studi di Milano - 2018-9" << std::endl;
-	std::cout << "             http://github.com/AnacletoLAB/parSMURF" << std::endl;
-	std::cout << "______________________________________________________________________" << std::endl << std::endl;
+	std::cout << "____________________________________________________________________________________________" << std::endl << std::endl;
+	std::cout << "\033[38;5;215m ██████╗  █████╗ ██████╗ ███████╗███╗   ███╗██╗   ██╗██████╗ ███████╗    ███╗   ██╗ ██████╗ \e[0m" << std::endl;
+	std::cout << "\033[38;5;215m ██╔══██╗██╔══██╗██╔══██╗██╔════╝████╗ ████║██║   ██║██╔══██╗██╔════╝    ████╗  ██║██╔════╝ \e[0m" << std::endl;
+	std::cout << "\033[38;5;216m ██████╔╝███████║██████╔╝███████╗██╔████╔██║██║   ██║██████╔╝█████╗      ██╔██╗ ██║██║  ███╗\e[0m" << std::endl;
+	std::cout << "\033[38;5;217m ██╔═══╝ ██╔══██║██╔══██╗╚════██║██║╚██╔╝██║██║   ██║██╔══██╗██╔══╝      ██║╚██╗██║██║   ██║\e[0m" << std::endl;
+	std::cout << "\033[38;5;218m ██║     ██║  ██║██║  ██║███████║██║ ╚═╝ ██║╚██████╔╝██║  ██║██║         ██║ ╚████║╚██████╔╝\e[0m" << std::endl;
+	std::cout << "\033[38;5;218m ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝         ╚═╝  ╚═══╝ ╚═════╝\e[0m" << std::endl;
+	std::cout << "____________________________________________________________________________________________" << std::endl << std::endl;
+	std::cout << "                   AnacletoLab - Universita' degli studi di Milano - 2019" << std::endl;
+	std::cout << "                           http://github.com/AnacletoLAB/parSMURF" << std::endl;
+	std::cout << "____________________________________________________________________________________________" << std::endl << std::endl;
 }
 
 void ArgHandle::displayHelp() {
-	std::cout << "Usage (parSMURF1): ./parSMURF1 --cfg configFile.json" << std::endl;
-	std::cout << "Usage (parSMURFn): mpirun -n <nOfSubprocesses> ./parSMURFn --cfg configFile.json" << std::endl;
+	std::cout << "Usage: mpirun -n <nOfSubprocesses> ./parSMURFng --cfg configFile.json" << std::endl;
 }

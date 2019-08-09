@@ -34,6 +34,10 @@ int main(int argc, char ** argv){
 	el::Loggers::reconfigureLogger("default", conf);
 	el::Loggers::reconfigureAllLoggers(conf);
 
+	std::vector<GridParams> gridParams;
+	ArgHandle commandLine( argc, argv, gridParams );
+	commandLine.processCommandLine( rank );
+
 	// Megacache init
 	MegaCache mc(rank, "data.txt", "label.txt", "");
 
