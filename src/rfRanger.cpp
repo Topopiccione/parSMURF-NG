@@ -1,5 +1,6 @@
-// parSMURF
+// parSMURFng// parSMURF
 // Alessandro Petrini, 2018-2019
+// 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "rfRanger.h"
 
 // I valori sono quelli di default in entrambi i costruttori

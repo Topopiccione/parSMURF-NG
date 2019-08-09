@@ -1,5 +1,5 @@
-# parSMURF
-# Alessandro Petrini, 2018-2019
+# parSMURFng
+# 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 
 project(parSMURF)
 cmake_minimum_required(VERSION 3.0.2)
@@ -39,7 +39,7 @@ SET(SRCCOMMON				"ArgHandler_new.cpp"
 
 FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
 
-SET(LOGGERSRC 				"easyloggingpp/easyloggingpp/easylogging++.cc")
+SET(LOGGERSRC 				"easyloggingpp/easylogging++.cc")
 
 SET(SOURCESMAIN				"parSMURFng.cpp"
 							#"samplerKNN.cpp"

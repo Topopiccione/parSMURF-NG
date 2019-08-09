@@ -1,5 +1,5 @@
-// parSMURF
-// Alessandro Petrini, 2018-2019
+// parSMURFng
+// 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "HyperSMURFUtils.h"
 
 std::vector<std::string> generateRandomName( const int n ) {

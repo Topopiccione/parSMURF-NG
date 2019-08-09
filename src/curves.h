@@ -1,5 +1,5 @@
-// parSMURF
-// Alessandro Petrini, 2018-2019
+// parSMURFng
+// 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #pragma once
 #include <cinttypes>
 #include <iostream>
