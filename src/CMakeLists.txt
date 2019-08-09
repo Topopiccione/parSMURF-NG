@@ -15,7 +15,7 @@ add_subdirectory(zlib)
 add_subdirectory(easyloggingpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 include_directories(ann_1.1.2/include/ANN)
 include_directories(ranger)
@@ -32,7 +32,7 @@ SET(SRCCOMMON				"ArgHandler_new.cpp"
 							"curves.cpp"
 							#"folds.cpp"
 							#"testtraindivider.cpp"
-							#"HyperSMURFUtils.cpp"
+							"HyperSMURFUtils.cpp"
 							#"partition.cpp"
 							#"sampler.cpp"
 							"rfRanger.cpp")
@@ -41,16 +41,18 @@ FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
 
 SET(LOGGERSRC 				"easyloggingpp/easyloggingpp/easylogging++.cc")
 
-SET(SOURCESGRID				#"parSMURF.cpp"
+SET(SOURCESMAIN				"parSMURFng.cpp"
 							#"samplerKNN.cpp"
-						#"hyperSMURF.cpp")
+						#"hyperSMURF.cpp"
+					)
 
 SET(SOURCESGRDMPI			#"parSMURF_MPI.cpp"
 							#"hyperSMURF_MPI.cpp"
 							#"MPIHelper.cpp"
 							#"partitionMPI.cpp"
 							#"samplerKNNMPI.cpp"
-						#"sendRecvThrd.cpp")
+						#"sendRecvThrd.cpp"
+					)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
@@ -67,32 +69,32 @@ ADD_CUSTOM_TARGET(release
 	COMMENT "Switch CMAKE_BUILD_TYPE to Release"
 )
 
-add_executable(parSMURF1 ${SRCCOMMON} ${RANGER} ${SOURCESGRID})
-add_dependencies(parSMURF1 ANN)
-add_dependencies(parSMURF1 jsoncons)
-add_dependencies(parSMURF1 zlib)
-add_dependencies(parSMURF1 easyloggingpp)
+add_executable(parSMURFng ${SRCCOMMON} ${RANGER} ${SOURCESMAIN})
+add_dependencies(parSMURFng ANN)
+add_dependencies(parSMURFng jsoncons)
+add_dependencies(parSMURFng zlib)
+add_dependencies(parSMURFng easyloggingpp)
 
-if (MPI_FOUND)
+# if (MPI_FOUND)
+#
+# 	add_executable(parSMURFn ${SRCCOMMON} ${RANGER} ${SOURCESGRDMPI} ${LOGGERSRC})
+# 	add_dependencies(parSMURFn ANN)
+# 	add_dependencies(parSMURFn jsoncons)
+# 	add_dependencies(parSMURFn zlib)
+# 	add_dependencies(parSMURFn easyloggingpp)
+#
+# 	if(MPI_COMPILE_FLAGS)
+# 		set_target_properties(parSMURFn PROPERTIES
+# 			COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+# 	endif()
+#
+# 	if(MPI_LINK_FLAGS)
+# 		set_target_properties(parSMURFn PROPERTIES
+# 			LINK_FLAGS "${MPI_LINK_FLAGS}")
+# 	endif()
+# endif()
 
-	add_executable(parSMURFn ${SRCCOMMON} ${RANGER} ${SOURCESGRDMPI} ${LOGGERSRC})
-	add_dependencies(parSMURFn ANN)
-	add_dependencies(parSMURFn jsoncons)
-	add_dependencies(parSMURFn zlib)
-	add_dependencies(parSMURFn easyloggingpp)
-
-	if(MPI_COMPILE_FLAGS)
-		set_target_properties(parSMURFn PROPERTIES
-			COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-	endif()
-
-	if(MPI_LINK_FLAGS)
-		set_target_properties(parSMURFn PROPERTIES
-			LINK_FLAGS "${MPI_LINK_FLAGS}")
-	endif()
-endif()
-
-target_link_libraries(parSMURF1 ANN ${zlib_LIB})
-if (MPI_FOUND)
-	target_link_libraries(parSMURFn ANN ${zlib_LIB} ${MPI_LIBRARIES})
-endif()
+target_link_libraries(parSMURFng ANN ${zlib_LIB})
+# if (MPI_FOUND)
+# 	target_link_libraries(parSMURFn ANN ${zlib_LIB} ${MPI_LIBRARIES})
+# endif()
