@@ -1,6 +1,6 @@
 // parSMURFng
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
-#include "HyperSMURFUtils.h"
+#include "parSMURFUtils.h"
 
 std::vector<std::string> generateRandomName( const int n ) {
 	const char alphanum[] =
