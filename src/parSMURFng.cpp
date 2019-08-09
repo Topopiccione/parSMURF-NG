@@ -36,12 +36,10 @@ int main(int argc, char ** argv){
 
 	std::vector<GridParams> gridParams;
 	ArgHandle commandLine( argc, argv, gridParams );
-	commandLine.processCommandLine( rank );
+	CommonParams commonParams = commandLine.processCommandLine( rank );
 
 	// Megacache init
-	MegaCache mc(rank, "data.txt", "label.txt", "");
+	MegaCache mc(rank, commonParams.dataFilename, commonParams.labelFilename, commonParams.foldFilename);
 
 	return 0;
-
-
 }

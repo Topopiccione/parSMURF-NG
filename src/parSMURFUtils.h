@@ -69,7 +69,10 @@ struct CommonParams {
 	uint32_t	nFolds;
 	uint32_t	seed;
 	uint32_t	verboseLevel;
-	std::string	outfilename;
+	std::string dataFilename;
+	std::string labelFilename;
+	std::string foldFilename;
+	std::string	outFilename;
 	std::string	timeFilename;
 	std::string	forestDirname;
 	std::string	cfgFilename;

@@ -15,10 +15,11 @@ public:
 	ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams );
 	virtual ~ArgHandle();
 
-	void processCommandLine( int rank );
+	CommonParams processCommandLine( int rank );
 	void processMtry( uint32_t mm );
 	void printConfig( uint32_t n, uint32_t m );
 	void fillParams( jsoncons::json * params, std::vector<GridParams> &gridParams );
+	CommonParams fillCommonParams();
 
 	std::vector<GridParams> &gridParams;
 

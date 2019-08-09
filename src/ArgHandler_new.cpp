@@ -16,7 +16,7 @@ ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams
 
 ArgHandle::~ArgHandle() {}
 
-void ArgHandle::processCommandLine( int rank ) {
+CommonParams ArgHandle::processCommandLine( int rank ) {
 	if (rank == 0)
 		printLogo();
 
@@ -74,11 +74,12 @@ void ArgHandle::processCommandLine( int rank ) {
 
 	checkCommonConfig( rank );
 	checkConfig( rank );
+	return fillCommonParams();
 }
 
 void ArgHandle::jsonImport( std::string cfgFilename ) {
 	try {
-        jsoncons::strict_parse_error_handler err_handler;
+		jsoncons::strict_parse_error_handler err_handler;
 		jsCfg = jsoncons::json::parse_file( cfgFilename, err_handler );
 	} catch (const jsoncons::parse_error& e) {
 		std::cout << e.what() << std::endl;
@@ -323,7 +324,28 @@ void ArgHandle::fillParams( jsoncons::json * params, std::vector<GridParams> &gr
 			}
 		}
 	}
+}
 
+CommonParams ArgHandle::fillCommonParams() {
+	CommonParams commonParams;
+	commonParams.seed			= seed;
+	commonParams.verboseLevel	= verboseLevel;
+	commonParams.verboseMPI		= verboseMPI;
+	commonParams.dataFilename	= dataFilename;
+	commonParams.labelFilename	= labelFilename;
+	commonParams.foldFilename	= foldFilename;
+	commonParams.outFilename	= outFilename;
+	commonParams.timeFilename	= timeFilename;
+	commonParams.forestDirname	= forestDirname;
+	commonParams.nThr 			= ensThreads;
+	commonParams.rfThr			= rfThreads;
+	commonParams.wmode			= wmode;
+	commonParams.woptimiz		= woptimiz;
+	commonParams.rfVerbose 		= (verboseLevel >= VERBRF);
+	commonParams.minFold		= minFold;
+	commonParams.maxFold		= maxFold;
+	commonParams.cfgFilename	= extConfigFilename;
+	return commonParams;
 }
 
 void ArgHandle::processMtry( uint32_t mm ) {
