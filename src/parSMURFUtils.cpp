@@ -20,35 +20,8 @@ std::vector<std::string> generateRandomName( const int n ) {
 	return out;
 }
 
-void generateRandomSet( const uint32_t nn, const uint32_t mm, std::vector<double>& xx, std::vector<uint32_t>& yy, const double prob, const uint32_t seed ) {
-	std::default_random_engine gen( seed );
-	std::normal_distribution<> disxNeg( 0, 1 );
-	std::normal_distribution<> disxPos( 5, 1 );
-	std::bernoulli_distribution disy( prob );
-	uint32_t cc = 0;
-	std::for_each( yy.begin(), yy.end(), [disy, &gen]( uint32_t &nnn )	mutable { nnn = disy( gen ); } );
-	for (size_t i = 0; i < nn; i++) {
-		if (yy[i] > 0) {
-			for (size_t j = 0; j < mm; j++) {
-				//xx[i*(mm+1) + j] = disxNeg( gen ) + disxPos( gen );
-				xx[i*(mm+1) + j] = disxPos( gen );
-				//xx[i*(mm+1) + j] = i + j / (double)mm;
-			}
-			xx[(i+1)*(mm+1)-1] = 1.0;
-		} else  {
-			for (size_t j = 0; j < mm; j++) {
-				xx[i*(mm+1) + j] = disxNeg( gen );
-				//xx[i*(mm+1) + j] = i + j / (double)mm;
-			}
-			xx[(i+1)*(mm+1)-1] = 2.0;
-		}
-	}
-}
-
-
 void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,
-		const std::vector<uint32_t> * const labels, std::string outFilename ) {
-
+				const std::vector<uint32_t> * const labels, std::string outFilename ) {
 	std::ofstream outFile( outFilename.c_str(), std::ios::out );
 	std::for_each( cl1, cl1 + nn, [&outFile]( double nnn ) { outFile << nnn << " "; } );
 	outFile << std::endl;
@@ -119,6 +92,7 @@ void checkLoggerConfFile() {
 		confFile.close();
 	}
 }
+
 
 Timer::Timer() {}
 
