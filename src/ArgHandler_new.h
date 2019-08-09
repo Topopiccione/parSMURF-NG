@@ -8,7 +8,7 @@
 #include <cmath>
 #include <time.h>
 #include <json.hpp>
-#include "HyperSMURFUtils.h"
+#include "parSMURFUtils.h"
 
 class ArgHandle {
 public:

@@ -35,7 +35,9 @@ SET(SRCCOMMON				"ArgHandler_new.cpp"
 							"HyperSMURFUtils.cpp"
 							#"partition.cpp"
 							#"sampler.cpp"
-							"rfRanger.cpp")
+							"rfRanger.cpp"
+							"MegaCache.cpp"
+							"hyperSMURF_core.cpp")
 
 FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
 
