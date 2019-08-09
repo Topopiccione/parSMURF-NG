@@ -20,12 +20,14 @@ MegaCache::MegaCache(const int rank, std::string dataFileName, std::string label
 	if (!foldFilename.empty())
 		t3.join();
 
-	if (tempVal != n)
+	if (!foldFilename.empty() & (tempVal != n))
 		std::cout << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML << std::endl;
+
+	size_t datasize = n * m * sizeof(double);
+	std::cout << TXT_BIYLW << "Size of dataset: " << datasize << " bytes." << TXT_NORML << std::endl;
 
 
 	cacheReady = true;
-
 }
 
 MegaCache::~MegaCache() {}
@@ -64,7 +66,7 @@ void MegaCache::detectNumberOfFeatures() {
 
 void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, size_t * nPos) {
 	size_t con = 0;
-	uint8_t inData;
+	uint32_t inData;
 	dstVect.clear();
 
 	std::ifstream labelFile( labelFilename.c_str(), std::ios::in );
@@ -73,14 +75,23 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 
 	std::cout << TXT_BIBLU << "Reading label file..." << TXT_NORML << std::endl;
 	while (labelFile >> inData) {
-		dstVect.push_back( inData );
+		dstVect.push_back( (uint8_t)inData );
 		con++;
 	}
 	std::cout << TXT_BIGRN << con << " labels read" << TXT_NORML << std::endl;
 	*valsRead = con;
 	labelFile.close();
 
+	// Count positives and fill posIdx
 	*nPos = (size_t) std::count( dstVect.begin(), dstVect.end(), 1 );
+	std::cout << TXT_BIGRN << *nPos << " positives" << TXT_NORML << std::endl;
+	posIdx = std::vector<size_t>(*nPos);
+	con = 0;
+	for (size_t i = 0; i < dstVect.size(); i++) {
+		if (dstVect[i] > 0)
+			posIdx[con++] = i;
+	}
+
 
 	labelsImported = true;
 }

@@ -45,6 +45,7 @@ private:
 	std::vector<size_t>		dataFileIdx;	// list of idx of lines in dataFile
 
 	size_t					nPos;
+	std::vector<size_t>		posIdx;
 	size_t					currentIdx;
 
 };
