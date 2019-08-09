@@ -1,0 +1,7 @@
+build
+src/easyloggingpp/easylogging++.cc
+src/easyloggingpp/easylogging++.h
+src/jsoncons/config
+src/jsoncons/detail
+src/jsoncons/*.hpp
+src/jsoncons/*.hpp.orig
