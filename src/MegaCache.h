@@ -11,18 +11,25 @@
 #include "parSMURFUtils.h"
 #include "easylogging++.h"
 
+enum cacheMode {
+	FULLCACHEMODE = 0,
+	PARTCACHEMODE = 1
+};
+
 class MegaCache {
 public:
-	MegaCache(const int rank, std::string dataFileName, std::string labelFilename, std::string foldFilename);
+	MegaCache(const int rank, size_t cacheSize, std::string dataFileName, std::string labelFilename, std::string foldFilename);
 	~MegaCache();
 
 	void getSample(size_t idx, std::vector<double> &sample);
 	void getSamples(std::vector<size_t>, std::vector<double> &samples);
 
 	int						rank;
+	size_t					cacheSize;
 	size_t					m;				// number of features
 	size_t					n;				// number of examples
 	uint8_t					nFolds;			// number of folds
+	uint8_t					cacheMode;
 	bool					labelsImported;
 	bool					foldsImported;
 	bool					featuresDetected;

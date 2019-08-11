@@ -80,6 +80,7 @@ struct CommonParams {
 	uint32_t	rfThr;
 	uint8_t		wmode;
 	uint8_t		woptimiz;
+	size_t		cacheSize;
 	bool	 	rfVerbose;
 	bool		verboseMPI;
 	bool		noMtSender;

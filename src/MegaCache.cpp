@@ -2,9 +2,9 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "MegaCache.h"
 
-MegaCache::MegaCache(const int rank, std::string dataFileName, std::string labelFileName, std::string foldFileName) :
-		rank{rank}, dataFilename{dataFileName}, labelFilename{labelFileName}, foldFilename{foldFileName},
-		labelsImported{false}, foldsImported{false}, featuresDetected{false}, cacheReady{false} {
+MegaCache::MegaCache(const int rank, size_t cacheSize, std::string dataFileName, std::string labelFileName, std::string foldFileName) :
+		rank{rank}, cacheSize{cacheSize}, dataFilename{dataFileName}, labelFilename{labelFileName}, foldFilename{foldFileName},
+		cacheMode{FULLCACHEMODE}, labelsImported{false}, foldsImported{false}, featuresDetected{false}, cacheReady{false} {
 
 	// Label and folds import are managed through STL I/O functions
 	// Data access is done by MPI I/O primitives
@@ -24,7 +24,26 @@ MegaCache::MegaCache(const int rank, std::string dataFileName, std::string label
 		std::cout << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML << std::endl;
 
 	size_t datasize = n * m * sizeof(double);
-	std::cout << TXT_BIYLW << "Size of dataset: " << datasize << " bytes." << TXT_NORML << std::endl;
+	std::cout << TXT_BIYLW << "Size of dataset: " << datasize << " bytes. ";
+	if (datasize <= cacheSize) {
+		cacheMode = FULLCACHEMODE;
+		std::cout << "Enabling full cache mode." << TXT_NORML << std::endl;
+		data = std::vector<double>(n * m);
+		dataIdx = std::vector<size_t>(n);
+	} else {
+		cacheMode = PARTCACHEMODE;
+		std::cout << "Enabling partial cache mode." << TXT_NORML << std::endl;
+		size_t tempNumElem = cacheSize / sizeof(double);
+		tempNumElem /= m;
+		data = std::vector<double>(tempNumElem * m);
+		dataIdx = std::vector<size_t>(tempNumElem);
+	}
+	labels = std::vector<uint8_t>(n);
+	folds = std::vector<uint8_t>(n);
+	// This is going to be moved to an external file, if it becomes too expensive to be kept in ram.
+	// Eventually, we should think about compressing data.
+	dataFileIdx = std::vector<size_t>(n);
+
 
 
 	cacheReady = true;

@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
 	CommonParams commonParams = commandLine.processCommandLine( rank );
 
 	// Megacache init
-	MegaCache mc(rank, commonParams.dataFilename, commonParams.labelFilename, commonParams.foldFilename);
+	MegaCache mc(rank, commonParams.cacheSize, commonParams.dataFilename, commonParams.labelFilename, commonParams.foldFilename);
 
 	return 0;
 }

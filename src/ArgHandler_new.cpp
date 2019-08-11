@@ -7,7 +7,7 @@ ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams
 		gridParams( gridParams ),
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), forestDirname( "" ), timeFilename( "" ), extConfigFilename( "" ),
 		seed( 0 ), verboseLevel(0),
-		ensThreads( 0 ), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ),
+		ensThreads( 0 ), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ), strCacheSize( "" ),
 		generateRandomFold( false ), readNFromFile( false ), verboseMPI( false ),
 		externalConfig( false ), printCurrentConfig( false ),
 		minFold( -1 ), maxFold( -1 ),
@@ -113,6 +113,7 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	verboseLevel		= getFromJson<uint32_t>( &exec, "verboseLevel", verboseLevel );
 	ensThreads			= getFromJson<uint32_t>( &exec, "ensThrd", ensThreads );
 	rfThreads			= getFromJson<uint32_t>( &exec, "rfThrd", rfThreads );
+	strCacheSize		= getFromJson<std::string>( &exec, "cacheSize", strCacheSize );
 
 	verboseMPI			= getFromJson<bool>( &exec, "verboseMPI", verboseMPI );
 	printCurrentConfig	= getFromJson<bool>( &exec, "printCfg", printCurrentConfig );
@@ -237,6 +238,14 @@ void ArgHandle::checkCommonConfig( int rank ) {
 		rfThreads = 0;
 	}
 
+	if (strCacheSize.empty()) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "No cache size specified. Setting default level (128MB) ('exec':'cacheSize')." << TXT_NORML << std::endl;
+		cacheSize = 128 * 1024 * 1024;
+	} else {
+		cacheSize = convertStrToDatasize(strCacheSize);
+	}
+
 	if (verboseLevel > 3) {
 		if (rank == 0)
 			std::cout << TXT_BIYLW << "verbose-level higher than 3." << TXT_NORML << std::endl;
@@ -341,6 +350,7 @@ CommonParams ArgHandle::fillCommonParams() {
 	commonParams.rfThr			= rfThreads;
 	commonParams.wmode			= wmode;
 	commonParams.woptimiz		= woptimiz;
+	commonParams.cacheSize		= cacheSize;
 	commonParams.rfVerbose 		= (verboseLevel >= VERBRF);
 	commonParams.minFold		= minFold;
 	commonParams.maxFold		= maxFold;
@@ -357,6 +367,44 @@ void ArgHandle::processMtry( uint32_t mm ) {
 		if (val.mtry == 0)
 			val.mtry = (uint32_t) sqrt( mm );
 	} );
+}
+
+size_t ArgHandle::convertStrToDatasize(std::string strCacheSize) {
+	size_t strLen = strCacheSize.size();
+	uint8_t c;
+	std::string num(strLen, '\0');
+	size_t multipl;
+
+	// extract the number from the string
+	bool startCharFound = false;
+	size_t idx = 0;
+	for (size_t i = 0; i < strLen; i++) {
+		c = (uint8_t) strCacheSize[i];
+		if (((c < 48) | (c > 57)) & startCharFound)
+			break;
+		else if ((c >= 48) & (c <= 57)) {
+			startCharFound = true;
+			num[idx++] = c;
+		}
+	}
+	num.resize(idx);
+
+	// extract the multiplier
+	for (size_t i = 0; i < strLen; i++) {
+		c = (uint8_t) strCacheSize[i];
+		if ((c == 'k') | (c == 'K')) {
+			multipl = 1024;
+			break;
+		} else if ((c == 'm') | (c == 'M')) {
+			multipl = 1024 * 1024;
+			break;
+		} else if ((c == 'g') | (c == 'G')) {
+			multipl = 1024 * 1024 * 1024;
+			break;
+		}
+	}
+
+	return multipl * std::stoi(num);
 }
 
 void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
@@ -382,6 +430,7 @@ void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
 		std::cout << " Verbose MPI messages on" << std::endl;
 	std::cout << "  Hyper-ensemble threads: " << ensThreads << std::endl;
 	std::cout << "  Random forset threads: " << rfThreads << std::endl;
+	std::cout << "  Cache size (bytes): " << cacheSize << std::endl;
 	if (woptimiz != OPT_NO) {
 		std::cout << " --" << std::endl;
 		std::cout << " -- Parameter optimization configurations --" << std::endl;

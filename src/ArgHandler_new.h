@@ -38,6 +38,8 @@ public:
 	uint32_t		rfThreads;
 	uint8_t			wmode;
 	uint8_t			woptimiz;
+	size_t			cacheSize;
+	std::string		strCacheSize;
 
 	bool			generateRandomFold;
 	bool			readNFromFile;
@@ -54,6 +56,7 @@ protected:
 	void checkConfig( int rank );
 	void checkCommonConfig( int rank );
 	void jsonImport( std::string cfgFilename );
+	size_t convertStrToDatasize(std::string strCacheSize);
 
 	template <typename T>
 	T getFromJson( jsoncons::json * jStrct, std::string field, T currValue ) {
