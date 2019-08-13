@@ -28,7 +28,7 @@ MegaCache::MegaCache(const int rank, const int worldSize, size_t cacheSize, std:
 	if (datasize <= cacheSize) {
 		cacheMode = FULLCACHEMODE;
 		std::cout << "Enabling full cache mode." << TXT_NORML << std::endl;
-		data = std::vector<double>(n * m);
+		data = std::vector<double>(n * (m + 1));
 		dataIdx = std::vector<size_t>(n);
 		dataIdxInv = std::vector<size_t>(n);
 		size_t tIdx = 0;
@@ -43,8 +43,6 @@ MegaCache::MegaCache(const int rank, const int worldSize, size_t cacheSize, std:
 		dataIdx = std::vector<size_t>(tempNumElem);
 		dataIdxInv = std::vector<size_t>(tempNumElem);
 	}
-	labels = std::vector<uint8_t>(n);
-	folds = std::vector<uint8_t>(n);
 	// This is going to be moved to an external file, if it becomes too expensive to be kept in ram.
 	// Eventually, we should think about compressing data.
 	dataFileIdx = std::vector<size_t>(n);
@@ -103,6 +101,7 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 		dstVect.push_back( (uint8_t)inData );
 		con++;
 	}
+
 	std::cout << TXT_BIGRN << con << " labels read" << TXT_NORML << std::endl;
 	*valsRead = con;
 	labelFile.close();
@@ -150,52 +149,108 @@ void MegaCache::preloadAndPrepareData() {
 	// (collective with individual file pointers)
 	if (cacheMode == FULLCACHEMODE) {
 		MPI_Status	fstatus;
-		size_t bufSize = 2 * 1024;		// 2 Kb per proc buffer, for testing purpose
+		size_t bufSize = 16 * worldSize * 1024;		// 16 Kb per proc buffer
 		size_t dataRead = 0;
 		size_t elementsImported = 0;
 		uint8_t * buf = new uint8_t[bufSize];
+		size_t labelCnt = 0;
 
 		// Temporary buffer for data conversion and reminder storage
 		size_t tempBufIdx = 0;
 		char * tempBuf = new char[256];
 		std::memset(tempBuf, '\0', 256);
 
+		// Defining datatypes for MPI_View
+		// std::vector<int> count_proc(worldSize);
+		// std::fill(count_proc.begin(), count_proc.end(), bufSize / worldSize);
+		// std::vector<int> count_disp(worldSize);
+		// size_t tIdx = 0;
+		// std::for_each(count_disp.begin(), count_disp.end(), [&](int &val){val = bufSize / worldSize * tIdx++;});
+		// MPI_Datatype vect_d;
+		// MPI_Type_vector(1,bufSize/worldSize,bufSize, MPI_UNSIGNED_CHAR, &vect_d);
+		// MPI_Offset offset = (MPI_Offset) count_disp[rank];
+		//
+		// MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
+		MPI_File_set_view(dataFile_Mpih, rank * bufSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+
 		// TODO: experiment with MPI_Info
-		MPI_File_open(MPI_COMM_WORLD, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
+		MPI_File_open(MPI_COMM_SELF, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
 		MPI_Offset filesize;
 		MPI_File_get_size(dataFile_Mpih, &filesize);
-		//MPI_File_set_view(dataFile_Mpih, 0, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+
 		std::cout << "Rank: " << rank << " - " << filesize << std::endl;
+		Timer ttt;
+		ttt.startTime();
 		while (dataRead < filesize) {
 			std::memset(buf, ' ', bufSize);
-			MPI_File_read(dataFile_Mpih, buf, bufSize, MPI_UNSIGNED_CHAR, &fstatus);
-			MPI_Barrier(MPI_COMM_WORLD);
-			//std::cout << TXT_BIYLW << "rank: " << rank << " - " << TXT_NORML << buf << std::endl;
-			// char a;
-			// std::cin >> a;
-			processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported);
+			MPI_File_read_all(dataFile_Mpih, buf, bufSize, MPI_UNSIGNED_CHAR, &fstatus);
+			// MPI_Barrier(MPI_COMM_WORLD);
+			processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported, &labelCnt);
 			dataRead += (bufSize);
-			//std::cout << TXT_BIYLW << "Buffer empty" << TXT_NORML << std::endl;
 		}
+		ttt.endTime();
 
 		std::cout << TXT_BIYLW << elementsImported << " elements imported " << TXT_NORML << std::endl;
+		std::cout << TXT_BIYLW << "Rank: " << rank << ": MPI import time = " << ttt.duration() << TXT_NORML << std::endl;
 
 		delete[] tempBuf;
 		delete[] buf;
 		MPI_File_close(&dataFile_Mpih);
+
+		std::for_each(data.begin(), data.begin() + 100, [&](double val){std::cout << val << " ";});
+
+		// // Check: load with STL and compare what has been read by MPI
+		// std::vector<double> dataStd;
+		// {
+		// 	double inDouble;
+		// 	size_t con = 0;
+		// 	size_t labelCnt = 0;
+		// 	size_t labelIdx = 0;
+		// 	std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
+		// 	if (!dataFile)
+		// 		throw std::runtime_error( "Error opening matrix file." );
+		//
+		// 	ttt.startTime();
+		// 	while (dataFile >> inDouble) {
+		// 		dataStd.push_back( inDouble );
+		// 		labelCnt++;
+		// 		if (labelCnt == m) {
+		// 			dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
+		// 			labelCnt = 0;
+		// 		}
+		// 		con++;
+		// 	}
+		// 	ttt.endTime();
+		// 	std::cout << "rank " << rank << " - " << con << " values read." << std::endl;
+		// 	std::cout << TXT_BIYLW << "Rank: " << rank << ": STL import time = " << ttt.duration() << TXT_NORML << std::endl;
+		// 	dataFile.close();
+		// 	// Now each rack compare what has been read via MPI
+		// 	std::cout << TXT_BIYLW << "rank " << rank << " - Checking... " << TXT_NORML << std::endl;
+		// 	for (size_t ii = 0; ii < dataStd.size(); ii++) {
+		// 		if (dataStd[ii] != data[ii])
+		// 			std::cout << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii] << std::endl;
+		// 	}
+		// }
 	}
 }
 
-void MegaCache::processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported) {
+void MegaCache::processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf,
+			size_t * const tempBufIdx, size_t * const elementsImported, size_t * const labelCnt) {
 	size_t idx = 0;
 
 	while (idx < bufSize) {
 		// We have a space and it could be the end of a number or an empty space:
-		// if tempBufIdx > 0, convert the buffer to a number, empty the buffer and continue
-		// otherwise, continue
+		// if tempBufIdx > 0, convert the buffer to a number, empty the buffer and continue.
+		// Otherwise, continue
 		if ((buf[idx] == ' ') | (buf[idx] == '\n')){
 			if (*tempBufIdx > 0)
 				convertData(tempBuf, tempBufIdx, elementsImported);
+			// If \n, let's put the label at the end of the line
+			if (buf[idx] == '\n') {
+				data[(*elementsImported)] = labels[(*labelCnt)] == 1 ? 1.0 : 2.0;
+				(*elementsImported)++;
+				(*labelCnt)++;
+			}
 			idx++;
 			continue;
 		// If it is not a space or a new line, append the char to the temporary buffer and
@@ -207,12 +262,9 @@ void MegaCache::processBuffer(uint8_t * const buf, const size_t bufSize, char * 
 	}
 }
 
-
-void MegaCache::convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported) {
-	//if (rank == 0) std::cout << tempBuf << std::endl;
+inline void MegaCache::convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported) {
 	double tempVal = strtod(tempBuf, nullptr);
 	data[*elementsImported] = tempVal;
-	// std::cout << data[*elementsImported] << std::endl;
 	(*elementsImported)++;
 	std::memset(tempBuf, '\0', *tempBufIdx);
 	*tempBufIdx = 0;

@@ -42,7 +42,7 @@ private:
 	void loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, size_t * nPos);
 	void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds);
 	void detectNumberOfFeatures();
-	void processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported);
+	void processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported, size_t * const labelCnt);
 	void convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported);
 
 	std::string				dataFilename;
