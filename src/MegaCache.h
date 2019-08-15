@@ -10,6 +10,7 @@
 #include <mpi.h>
 
 #include "parSMURFUtils.h"
+#include "Folds.h"
 #include "easylogging++.h"
 
 enum cacheMode {
@@ -19,7 +20,7 @@ enum cacheMode {
 
 class MegaCache {
 public:
-	MegaCache(const int rank, const int worldSize, size_t cacheSize, std::string dataFileName, std::string labelFilename, std::string foldFilename);
+	MegaCache(const int rank, const int worldSize, CommonParams commonParams);
 	~MegaCache();
 
 	void getSample(size_t idx, std::vector<double> &sample);
@@ -37,17 +38,22 @@ public:
 	bool					featuresDetected;
 	bool					cacheReady;
 
+	Folds					foldManager;
+
 private:
 	void preloadAndPrepareData();
 	void loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, size_t * nPos);
-	void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds);
+	// void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds);
 	void detectNumberOfFeatures();
 	void processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported, size_t * const labelCnt);
 	void convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported);
+	void generateFolds();
 
 	std::string				dataFilename;
 	std::string				labelFilename;
 	std::string				foldFilename;
+
+	CommonParams			commonParams;
 
 	std::vector<double>		data;			// Main data array
 	std::vector<uint8_t>	labels;			// Main labels array

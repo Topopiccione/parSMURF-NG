@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
 	CommonParams commonParams = commandLine.processCommandLine( rank );
 
 	// Megacache init
-	MegaCache mc(rank, worldSize, commonParams.cacheSize, commonParams.dataFilename, commonParams.labelFilename, commonParams.foldFilename);
+	MegaCache mc(rank, worldSize, commonParams);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

@@ -2,23 +2,29 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "MegaCache.h"
 
-MegaCache::MegaCache(const int rank, const int worldSize, size_t cacheSize, std::string dataFileName, std::string labelFileName, std::string foldFileName) :
-		rank{rank}, worldSize{worldSize}, cacheSize{cacheSize}, dataFilename{dataFileName}, labelFilename{labelFileName}, foldFilename{foldFileName},
+MegaCache::MegaCache(const int rank, const int worldSize, CommonParams commonParams) :
+		rank{rank}, worldSize{worldSize}, commonParams{commonParams},
 		cacheMode{FULLCACHEMODE}, labelsImported{false}, foldsImported{false}, featuresDetected{false}, cacheReady{false} {
+
+	cacheSize		= commonParams.cacheSize;
+	dataFilename	= commonParams.dataFilename;
+	labelFilename	= commonParams.labelFilename;
+	foldFilename	= commonParams.foldFilename;
+	nFolds			= commonParams.nFolds;
 
 	// Label and folds import are managed through STL I/O functions
 	// Data access is done by MPI I/O primitives
+	size_t tempVal;
 	std::thread t1( &MegaCache::detectNumberOfFeatures, this );
 	std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
-	std::thread t3;
-	size_t tempVal;
-	if (!foldFilename.empty())
-		t3 = std::thread( &MegaCache::loadFolds, this, std::ref(folds), &tempVal, &nFolds );
+	std::thread t3( &MegaCache::generateFolds, this );
+	//std::thread t3( &MegaCache::loadFolds, this, std::ref(folds), &tempVal, &nFolds );
+	//generateFolds();
 
 	t1.join();
 	t2.join();
-	if (!foldFilename.empty())
-		t3.join();
+	t3.join();
+
 
 	if (!foldFilename.empty() & (tempVal != n))
 		std::cout << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML << std::endl;
@@ -119,27 +125,35 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 	labelsImported = true;
 }
 
-void MegaCache::loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds) {
-	size_t con = 0;
-	uint8_t inData;
-	dstVect.clear();
+// void MegaCache::loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds) {
+// 	size_t con = 0;
+// 	uint8_t inData;
+// 	dstVect.clear();
+//
+// 	// If a foldFile has been specified, each rank reads it
+// 	if (!foldFilename.empty()) {
+// 		std::ifstream foldFile( foldFilename.c_str(), std::ios::in );
+// 		if (!foldFile)
+// 			throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
+//
+// 		std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
+// 		*nFolds = 0;
+// 		while (foldFile >> inData) {
+// 			dstVect.push_back( inData );
+// 			con++;
+// 			if (dstVect[con - 1] > *nFolds) *nFolds = dstVect[con - 1];
+// 		}
+// 		std::cout << TXT_BIGRN << con << " values read." << TXT_NORML << std::endl;
+// 		(*nFolds)++;
+// 		std::cout << TXT_BIGRN << "Total number of folds: " << *nFolds << TXT_NORML << std::endl;
+// 		foldFile.close();
+// 	}
+//
+// 	foldsImported = true;
+// }
 
-	std::ifstream foldFile( foldFilename.c_str(), std::ios::in );
-	if (!foldFile)
-		throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
-
-	std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
-	*nFolds = 0;
-	while (foldFile >> inData) {
-		dstVect.push_back( inData );
-		con++;
-		if (dstVect[con - 1] > *nFolds) *nFolds = dstVect[con - 1];
-	}
-	std::cout << TXT_BIGRN << con << " values read." << TXT_NORML << std::endl;
-	(*nFolds)++;
-	std::cout << TXT_BIGRN << "Total number of folds: " << *nFolds << TXT_NORML << std::endl;
-	foldFile.close();
-
+void MegaCache::generateFolds() {
+	foldManager = Folds(rank, foldFilename, n, nFolds, labels, &labelsImported);
 	foldsImported = true;
 }
 
@@ -171,7 +185,7 @@ void MegaCache::preloadAndPrepareData() {
 		// MPI_Offset offset = (MPI_Offset) count_disp[rank];
 		//
 		// MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
-		MPI_File_set_view(dataFile_Mpih, rank * bufSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+		MPI_File_set_view(dataFile_Mpih, rank * bufSize / worldSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 
 		// TODO: experiment with MPI_Info
 		MPI_File_open(MPI_COMM_SELF, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
@@ -197,40 +211,38 @@ void MegaCache::preloadAndPrepareData() {
 		delete[] buf;
 		MPI_File_close(&dataFile_Mpih);
 
-		std::for_each(data.begin(), data.begin() + 100, [&](double val){std::cout << val << " ";});
+		// Check: load with STL and compare what has been read by MPI
+		std::vector<double> dataStd;
+		{
+			double inDouble;
+			size_t con = 0;
+			size_t labelCnt = 0;
+			size_t labelIdx = 0;
+			std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
+			if (!dataFile)
+				throw std::runtime_error( "Error opening matrix file." );
 
-		// // Check: load with STL and compare what has been read by MPI
-		// std::vector<double> dataStd;
-		// {
-		// 	double inDouble;
-		// 	size_t con = 0;
-		// 	size_t labelCnt = 0;
-		// 	size_t labelIdx = 0;
-		// 	std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
-		// 	if (!dataFile)
-		// 		throw std::runtime_error( "Error opening matrix file." );
-		//
-		// 	ttt.startTime();
-		// 	while (dataFile >> inDouble) {
-		// 		dataStd.push_back( inDouble );
-		// 		labelCnt++;
-		// 		if (labelCnt == m) {
-		// 			dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
-		// 			labelCnt = 0;
-		// 		}
-		// 		con++;
-		// 	}
-		// 	ttt.endTime();
-		// 	std::cout << "rank " << rank << " - " << con << " values read." << std::endl;
-		// 	std::cout << TXT_BIYLW << "Rank: " << rank << ": STL import time = " << ttt.duration() << TXT_NORML << std::endl;
-		// 	dataFile.close();
-		// 	// Now each rack compare what has been read via MPI
-		// 	std::cout << TXT_BIYLW << "rank " << rank << " - Checking... " << TXT_NORML << std::endl;
-		// 	for (size_t ii = 0; ii < dataStd.size(); ii++) {
-		// 		if (dataStd[ii] != data[ii])
-		// 			std::cout << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii] << std::endl;
-		// 	}
-		// }
+			ttt.startTime();
+			while (dataFile >> inDouble) {
+				dataStd.push_back( inDouble );
+				labelCnt++;
+				if (labelCnt == m) {
+					dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
+					labelCnt = 0;
+				}
+				con++;
+			}
+			ttt.endTime();
+			std::cout << "rank " << rank << " - " << con << " values read." << std::endl;
+			std::cout << TXT_BIYLW << "Rank: " << rank << ": STL import time = " << ttt.duration() << TXT_NORML << std::endl;
+			dataFile.close();
+			// Now each rack compare what has been read via MPI
+			std::cout << TXT_BIYLW << "rank " << rank << " - Checking... " << TXT_NORML << std::endl;
+			for (size_t ii = 0; ii < dataStd.size(); ii++) {
+				if (dataStd[ii] != data[ii])
+					std::cout << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii] << std::endl;
+			}
+		}
 	}
 }
 
@@ -268,4 +280,14 @@ inline void MegaCache::convertData(char * const tempBuf, size_t * const tempBufI
 	(*elementsImported)++;
 	std::memset(tempBuf, '\0', *tempBufIdx);
 	*tempBufIdx = 0;
+}
+
+
+// sample vector must have been preallocated as std::vector<double>(m+1)
+void MegaCache::getSample(size_t idx, std::vector<double> &sample) {
+	if (cacheMode == FULLCACHEMODE) {
+		std::memcpy(sample.data(), data.data() + (idx * (m + 1)), (m + 1) * sizeof(double));
+	} else {
+		std::cout << "Not yet implemented..." << std::endl;
+	}
 }

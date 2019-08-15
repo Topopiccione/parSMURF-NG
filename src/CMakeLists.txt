@@ -28,11 +28,11 @@ include_directories(easyloggingpp)
 SET(SRCCOMMON				"ArgHandler_new.cpp"
 							#"fileImport.cpp"
 							"curves.cpp"
-							#"folds.cpp"
+							"Folds.cpp"
 							#"testtraindivider.cpp"
 							"parSMURFUtils.cpp"
 							#"partition.cpp"
-							#"sampler.cpp"
+							"sampler.cpp"
 							"rfRanger.cpp"
 							"MegaCache.cpp"
 							"hyperSMURF_core.cpp")

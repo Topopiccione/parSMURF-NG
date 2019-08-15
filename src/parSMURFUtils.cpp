@@ -16,8 +16,13 @@ std::vector<std::string> generateRandomName( const int n ) {
 		std::for_each( stringa, stringa + slen, [alphanum](char &c){c = alphanum[rand() % (sizeof(alphanum) - 1)];} );
 		out.push_back( std::string( stringa ) );
 	}
-
 	return out;
+}
+
+std::vector<std::string> generateNames(const size_t n) {
+	std::vector<std::string> out;
+	for (size_t i = 0; i < n; i++)
+		out.push_back(std::to_string(i));
 }
 
 void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,

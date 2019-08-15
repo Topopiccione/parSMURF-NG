@@ -9,6 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <iostream>
+#include <mpi.h>
 
 // ANSI console command for text coloring
 #ifdef __unix
@@ -28,6 +29,28 @@
 #define TXT_BIRED ""
 #define TXT_NORML ""
 #endif
+
+// From: https://stackoverflow.com/questions/1562074/how-do-i-show-the-value-of-a-define-at-compile-time
+// #define VALUE_TO_STRING(x) #x
+// #define VALUE(x) VALUE_TO_STRING(x)
+// #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+//
+// #pragma message(VAR_NAME_VALUE(SIZE_MAX))
+// #pragma message(VAR_NAME_VALUE(USHRT_MAX))
+// #pragma message(VAR_NAME_VALUE(UINT_MAX))
+// #pragma message(VAR_NAME_VALUE(ULONG_MAX))
+// #pragma message(VAR_NAME_VALUE(ULLONG_MAX))
+
+
+//// MPI define for size_t. NOT PORTABLE. ONLY WORKS ON 64-bit Linux
+// 64-bit arch
+#define MPI_SIZE_T_ MPI_UNSIGNED_LONG_LONG
+// 32-bit arch
+// #define MPI_SIZE_T_ MPI_UNSIGNED
+// 16-bit arch
+// #define MPI_SIZE_T_ MPI_UNSIGNED_SHORT
+// 8-bit arch
+// #define MPI_SIZE_T_ MPI_UNSIGNED_CHAR
 
 
 // some useful labelling...
@@ -91,6 +114,7 @@ struct CommonParams {
 
 // Various utility functions
 std::vector<std::string> generateRandomName( const int n );
+std::vector<std::string> generateNames(const size_t n);
 void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,
 		const std::vector<uint32_t> * const labels, std::string outFilename );
 std::vector<std::string> split_str( std::string s, std::string delimiters );
