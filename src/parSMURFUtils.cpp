@@ -23,6 +23,7 @@ std::vector<std::string> generateNames(const size_t n) {
 	std::vector<std::string> out;
 	for (size_t i = 0; i < n; i++)
 		out.push_back(std::to_string(i));
+	return out;
 }
 
 void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,

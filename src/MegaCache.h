@@ -20,7 +20,7 @@ enum cacheMode {
 
 class MegaCache {
 public:
-	MegaCache(const int rank, const int worldSize, CommonParams commonParams);
+	MegaCache(const int rank, const int worldSize, CommonParams &commonParams);
 	~MegaCache();
 
 	void getSample(size_t idx, std::vector<double> &sample);

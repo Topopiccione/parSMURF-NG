@@ -2,7 +2,7 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "MegaCache.h"
 
-MegaCache::MegaCache(const int rank, const int worldSize, CommonParams commonParams) :
+MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonParams) :
 		rank{rank}, worldSize{worldSize}, commonParams{commonParams},
 		cacheMode{FULLCACHEMODE}, labelsImported{false}, foldsImported{false}, featuresDetected{false}, cacheReady{false} {
 
@@ -54,6 +54,10 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams commonPar
 	dataFileIdx = std::vector<size_t>(n);
 
 	preloadAndPrepareData();
+
+	commonParams.nn = n;
+	commonParams.mm = m;
+	commonParams.nFolds = nFolds;
 
 	cacheReady = true;
 }

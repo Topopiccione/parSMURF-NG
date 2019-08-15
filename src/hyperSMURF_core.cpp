@@ -23,6 +23,8 @@ hyperSMURFcore::hyperSMURFcore(CommonParams commonParams, GridParams gridParams,
 
 	rfTrain			= nullptr;
 	rfTest			= nullptr;
+
+	nomi = generateNames( m + 1 );
 }
 
 void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
@@ -31,33 +33,61 @@ void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &n
 	// Evaluate data matrix size
 	size_t totPos, totNeg, tot;
 	{
-		size_t posToBeGenerated = (fp + 1) * posIdx.size();
-		size_t negToBeGenerated = posToBeGenerated * ratio;
-		negToBeGenerated = (negToBeGenerated > negIdx.size()) ? negIdx.size() : negToBeGenerated;
-		totPos = posToBeGenerated;
-		totNeg = negToBeGenerated;
+		totPos = (fp + 1) * posIdx.size();
+		totNeg = totPos * ratio;
+		totNeg = (totNeg > negIdx.size()) ? negIdx.size() : totNeg;
 		tot    = totPos + totNeg;
 	}
 
 	// Assemble data matrix
-	// In parallel: copy positive and negative samples
+	// In parallel? Copy positive and negative samples
 	localData = std::vector<double>(tot * (m + 1));
 	copySamplesInLocalData(posIdx.size(), posIdx, 0, tot, localData);
 	copySamplesInLocalData(totNeg, negIdx, totPos, tot, localData);
 
 	// Oversample
-	Sampler samp(m, n, tot, posIdx.size(), k, fp);
+	Sampler samp(n, m, tot, posIdx.size(), k, fp);
 	samp.overSample(localData);
 
 	// Forest train
 	uint32_t seedCustom = seed;
-	std::vector<std::string> nomi = generateNames( m + 1 );
 	nomi[m] = "Labels";
 	// BEWARE! DataDouble applies a std::move to localData, whose status remains undefined afterwards!
 	// This may be critical if we are going to reuse localData
 	std::unique_ptr<Data> input_data( new DataDouble( localData, nomi, tot, m + 1 ) );
 	rfTrain = new rfRanger( m, false, std::move(input_data), numTrees, mtry, rfThr, seedCustom );
-	rfTrain->train( false );
+	rfTrain->train( true );
+}
+
+void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
+	// Assemble vector of idx
+	std::vector<size_t> idxs;
+	std::for_each(posIdxIn.begin(), posIdxIn.end(), [&idxs](size_t val){idxs.push_back(val);});
+	std::for_each(negIdxIn.begin(), negIdxIn.end(), [&idxs](size_t val){idxs.push_back(val);});
+
+	// Evaluate data matrix size
+	size_t tot = idxs.size();
+
+	// Assemble data matrix
+	localData = std::vector<double>(tot * (m + 1));
+	copySamplesInLocalData(tot, idxs, 0, tot, localData);
+	// Erasing the original label of each sample in the test set
+	std::for_each(localData.begin() + tot * m, localData.begin() + tot * (m + 1), [](double &val) {val = 0;});
+
+	// Forest test
+	uint32_t seedCustom = seed;
+	nomi[m] = "dependent";
+	// BEWARE! DataDouble applies a std::move to localData, whose status remains undefined afterwards!
+	// This may be critical if we are going to reuse localData
+	std::unique_ptr<Data> test_data( new DataDouble( localData, nomi, tot, m + 1 ) );
+	rfTest = new rfRanger( rfTrain->forest, m, true, std::move(test_data), numTrees, mtry, rfThr, seedCustom );
+	rfTest->predict( true );
+
+	// Get predicted valued
+	const std::vector<std::vector<std::vector<double>>>& predictions = rfTest->forestPred->getPredictions();
+	std::cout << tot << std::endl;
+	class1Prob.clear();
+	std::for_each(predictions[0].begin(), predictions[0].end(), [&](std::vector<double> val) {class1Prob.push_back(val[0]);});
 }
 
 hyperSMURFcore::~hyperSMURFcore() {

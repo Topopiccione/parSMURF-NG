@@ -23,7 +23,7 @@ public:
 	void train(std::vector<size_t> &posIdx, std::vector<size_t> &negIdx);
 	void saveTrainedForest();
 	void loadForest();
-	void test(std::vector<size_t> &idx);
+	void test(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn);
 
 	// Public vars
 	std::vector<double>				class1Prob;
@@ -36,7 +36,7 @@ private:
 	size_t							m;
 	CommonParams					commonParams;
 	GridParams						gridParams;
-	MegaCache * const			cache;
+	MegaCache * const				cache;
 	std::vector<size_t>				posIdx;
 	std::vector<size_t>				negIdx;
 
@@ -58,5 +58,6 @@ private:
 	rfRanger	*					rfTrain;
 	rfRanger	*					rfTest;
 	std::vector<double>				localData;
+	std::vector<std::string>		nomi;
 
 };
