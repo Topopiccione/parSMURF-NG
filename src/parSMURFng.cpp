@@ -43,8 +43,6 @@ int main(int argc, char ** argv){
 	// Megacache init
 	MegaCache mc(rank, worldSize, commonParams);
 
-	std::cout << commonParams.nn << " " <<  commonParams.mm << std::endl;
-
 	// Supertest to check if hyperSMURFcore works, using MyData1.txt and MyData1L.txt
 	{
 		std::vector<size_t> posTrng;

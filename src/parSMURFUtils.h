@@ -70,9 +70,11 @@ enum wmode {
 
 // Optimizer modes
 enum woptimizer {
-	OPT_NO			= 16,		// Disable internal CV
-	OPT_GRID		= 32,		// Enable internal CV with grid search for optimal parameters
-	OPT_AUTOGP		= 64		// Enable internal CV with Gaussian Process search for optimal parameters
+	OPT_NO			= 8,		// Disable internal CV
+	OPT_GRID_CV		= 16,		// Enable internal CV with grid search for optimal parameters
+	OPT_AUTOGP_CV	= 32,		// Enable internal CV with Gaussian Process search for optimal parameters
+	OPT_GRID_HO		= 64,
+	OPT_AUTOGP_HO	= 128
 };
 
 struct GridParams {
