@@ -111,6 +111,7 @@ struct CommonParams {
 	bool		verboseMPI;
 	bool		noMtSender;
 	bool		customCV;
+	bool		foldsRandomlyGenerated;
 	uint32_t	minFold;
 	uint32_t	maxFold;
 };
@@ -118,8 +119,7 @@ struct CommonParams {
 // Various utility functions
 std::vector<std::string> generateRandomName( const int n );
 std::vector<std::string> generateNames(const size_t n);
-void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,
-		const std::vector<uint32_t> * const labels, std::string outFilename );
+// void saveToFile( const std::vector<double> &preds, const std::vector<uint8_t> &folds, std::string outFilename );
 std::vector<std::string> split_str( std::string s, std::string delimiters );
 void printData(const double * const xx, const uint32_t * const yy, const size_t nn, const size_t mm, const bool printLabels );
 void transposeMatrix(double * const dst, const double * const src, const size_t nn, const size_t mm);

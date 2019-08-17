@@ -341,25 +341,26 @@ void ArgHandle::fillParams( jsoncons::json * params, std::vector<GridParams> &gr
 
 CommonParams ArgHandle::fillCommonParams() {
 	CommonParams commonParams;
-	commonParams.nFolds			= nFolds;
-	commonParams.seed			= seed;
-	commonParams.verboseLevel	= verboseLevel;
-	commonParams.verboseMPI		= verboseMPI;
-	commonParams.dataFilename	= dataFilename;
-	commonParams.labelFilename	= labelFilename;
-	commonParams.foldFilename	= foldFilename;
-	commonParams.outFilename	= outFilename;
-	commonParams.timeFilename	= timeFilename;
-	commonParams.forestDirname	= forestDirname;
-	commonParams.nThr 			= ensThreads;
-	commonParams.rfThr			= rfThreads;
-	commonParams.wmode			= wmode;
-	commonParams.woptimiz		= woptimiz;
-	commonParams.cacheSize		= cacheSize;
-	commonParams.rfVerbose 		= (verboseLevel >= VERBRF);
-	commonParams.minFold		= minFold;
-	commonParams.maxFold		= maxFold;
-	commonParams.cfgFilename	= extConfigFilename;
+	commonParams.nFolds					= nFolds;
+	commonParams.seed					= seed;
+	commonParams.verboseLevel			= verboseLevel;
+	commonParams.verboseMPI				= verboseMPI;
+	commonParams.dataFilename			= dataFilename;
+	commonParams.labelFilename			= labelFilename;
+	commonParams.foldFilename			= foldFilename;
+	commonParams.outFilename			= outFilename;
+	commonParams.timeFilename			= timeFilename;
+	commonParams.forestDirname			= forestDirname;
+	commonParams.nThr 					= ensThreads;
+	commonParams.rfThr					= rfThreads;
+	commonParams.wmode					= wmode;
+	commonParams.woptimiz				= woptimiz;
+	commonParams.cacheSize				= cacheSize;
+	commonParams.rfVerbose 				= (verboseLevel >= VERBRF);
+	commonParams.foldsRandomlyGenerated = generateRandomFold;
+	commonParams.minFold				= minFold;
+	commonParams.maxFold				= maxFold;
+	commonParams.cfgFilename			= extConfigFilename;
 	return commonParams;
 }
 

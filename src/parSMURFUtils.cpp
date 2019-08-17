@@ -26,19 +26,16 @@ std::vector<std::string> generateNames(const size_t n) {
 	return out;
 }
 
-void saveToFile( const double * const cl1, const double * const cl2, const uint32_t nn,
-				const std::vector<uint32_t> * const labels, std::string outFilename ) {
-	std::ofstream outFile( outFilename.c_str(), std::ios::out );
-	std::for_each( cl1, cl1 + nn, [&outFile]( double nnn ) { outFile << nnn << " "; } );
-	outFile << std::endl;
-	std::for_each( cl2, cl2 + nn, [&outFile]( double nnn ) { outFile << nnn << " "; } );
-	outFile << std::endl;
-	if (!labels->empty()) {
-		for_each( labels->begin(), labels->end(), [&outFile]( uint32_t nnn ) { outFile << nnn << " "; } );
-		outFile << std::endl;
-	}
-	outFile.close();
-}
+// void saveToFile( const std::vector<double> &preds, const std::vector<uint8_t> &labels, std::string outFilename ) {
+// 	std::ofstream outFile( outFilename.c_str(), std::ios::out );
+// 	std::for_each( preds.begin(), preds.end(), [&outFile]( double nnn ) { outFile << nnn << " "; } );
+// 	outFile << std::endl;
+// 	if (!labels->empty()) {
+// 		for_each( labels.begin(), labels.end(), [&outFile]( uint8_t nnn ) { outFile << nnn << " "; } );
+// 		outFile << std::endl;
+// 	}
+// 	outFile.close();
+// }
 
 std::vector<std::string> split_str( std::string s, std::string delimiters ) {
 	std::vector<std::string> toBeRet;

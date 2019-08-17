@@ -50,6 +50,7 @@ int main(int argc, char ** argv){
 	// Create an instance of the runner and launch the run
 	Runner runner(rank, worldSize, &mc, organ, commonParams, gridParams);
 	runner.go();
+	runner.savePredictions();
 
 	// // Supertest to check if hyperSMURFcore works, using MyData1.txt and MyData1L.txt
 	// {

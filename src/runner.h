@@ -20,6 +20,7 @@ public:
 	Runner(int rank, int worldSize, MegaCache * const cache, Organizer &organ, CommonParams commonParams, std::vector<GridParams> gridParams);
 	~Runner() {};
 	void go();
+	void savePredictions();
 
 	std::vector<double> 		preds;
 
