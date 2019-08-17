@@ -164,15 +164,19 @@ void ArgHandle::checkCommonConfig( int rank ) {
 		exit(-1);
 	}
 
-	if (!optim.compare("grid"))
-		woptimiz = OPT_GRID;
-	else if (!optim.compare("autogp"))
-		woptimiz = OPT_AUTOGP;
+	if (!optim.compare("grid_cv"))
+		woptimiz = OPT_GRID_CV;
+	else if (!optim.compare("autogp_cv"))
+		woptimiz = OPT_AUTOGP_CV;
+	else if (!optim.compare("grid_ho"))
+		woptimiz = OPT_GRID_HO;
+	else if (!optim.compare("autogp_ho"))
+		woptimiz = OPT_AUTOGP_HO;
 	else if (!optim.compare("no"))
 		woptimiz = OPT_NO;
 	else if (optim.length() > 0) {
 		if (rank == 0)
-			std::cout << TXT_BIRED << "Invalid optimization mode. Please specify either 'no', 'grid' or 'autogp' (default is 'no')." << TXT_NORML << std::endl;
+			std::cout << TXT_BIRED << "Invalid optimization mode. Please specify either 'no', 'grid_cv', 'grid_ho', 'autogp_cv' or 'autogp_hoS' (default is 'no')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
@@ -441,7 +445,7 @@ void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
 		<< " - ratio: " << val.ratio <<		" - k: " << val.k << " - nTrees: " << val.nTrees
 		<< " - mtry: " << val.mtry << std::endl;
 	} );
-	if (woptimiz == OPT_AUTOGP) {
+	if ((woptimiz == OPT_AUTOGP_CV) or (woptimiz == OPT_AUTOGP_HO)) {
 		std::cout << " Gaussian Process optimizer enabled" << std::endl;
 	}
 }

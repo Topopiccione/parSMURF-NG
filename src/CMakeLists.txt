@@ -26,27 +26,18 @@ include_directories(${zlib_SOURCE_DIR})
 include_directories(easyloggingpp)
 
 SET(SRCCOMMON				"ArgHandler_new.cpp"
-							#"fileImport.cpp"
 							"curves.cpp"
 							"Folds.cpp"
-							#"testtraindivider.cpp"
+							"runner.cpp"
 							"parSMURFUtils.cpp"
 							"organizer.cpp"
-							#"partition.cpp"
 							"sampler.cpp"
 							"rfRanger.cpp"
 							"MegaCache.cpp"
 							"hyperSMURF_core.cpp")
-
 FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
-
 SET(LOGGERSRC 				"easyloggingpp/easylogging++.cc")
-
-SET(SOURCESMAIN				"parSMURFng.cpp"
-							#"samplerKNN.cpp"
-						#"hyperSMURF.cpp"
-					)
-
+SET(SOURCESMAIN				"parSMURFng.cpp")
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)

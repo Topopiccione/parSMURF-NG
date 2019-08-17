@@ -21,8 +21,11 @@ struct OrgStruct {
 
 class Organizer {
 public:
-	Organizer(MegaCache * const cache, CommonParams commonParams, GridParams gridParams);
+	Organizer(MegaCache * const cache, int rank, CommonParams commonParams);
 	~Organizer() {}
 
 	std::vector<OrgStruct>		org;
+
+private:
+	int							rank;
 };

@@ -15,6 +15,8 @@
 #include "parSMURFUtils.h"
 #include "ArgHandler_new.h"
 #include "MegaCache.h"
+#include "organizer.h"
+#include "runner.h"
 #include "easylogging++.h"
 
 #include "hyperSMURF_core.h"
@@ -40,8 +42,13 @@ int main(int argc, char ** argv){
 	ArgHandle commandLine( argc, argv, gridParams );
 	CommonParams commonParams = commandLine.processCommandLine( rank );
 
-	// Megacache init
+	// Megacache and organizer init
 	MegaCache mc(rank, worldSize, commonParams);
+	Organizer organ(&mc, rank, commonParams);
+
+	// Create an instance of the runner and launch the run
+	Runner runner(&mc, organ, commonParams, gridParams);
+	runner.go();
 
 	// Supertest to check if hyperSMURFcore works, using MyData1.txt and MyData1L.txt
 	{
