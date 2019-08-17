@@ -2,8 +2,8 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "hyperSMURF_core.h"
 
-hyperSMURFcore::hyperSMURFcore(CommonParams commonParams, GridParams gridParams, MegaCache * const cache)
-		: commonParams{commonParams}, gridParams{gridParams}, cache{cache} {
+hyperSMURFcore::hyperSMURFcore(CommonParams commonParams, GridParams gridParams, MegaCache * const cache, uint8_t currentFold, size_t currentPart)
+		: commonParams{commonParams}, gridParams{gridParams}, cache{cache}, currentFold{currentFold}, currentPart{currentPart} {
 
 	n				= commonParams.nn;
 	m				= commonParams.mm;
@@ -50,7 +50,7 @@ void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &n
 	samp.overSample(localData);
 
 	// Forest train
-	uint32_t seedCustom = seed;
+	uint32_t seedCustom = seed + 256 * currentFold + 512 * currentPart;
 	nomi[m] = "Labels";
 	// BEWARE! DataDouble applies a std::move to localData, whose status remains undefined afterwards!
 	// This may be critical if we are going to reuse localData
@@ -75,7 +75,7 @@ void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &ne
 	std::for_each(localData.begin() + tot * m, localData.begin() + tot * (m + 1), [](double &val) {val = 0;});
 
 	// Forest test
-	uint32_t seedCustom = seed;
+	uint32_t seedCustom = seed + 512 * currentFold + 256 * currentPart;
 	nomi[m] = "dependent";
 	// BEWARE! DataDouble applies a std::move to localData, whose status remains undefined afterwards!
 	// This may be critical if we are going to reuse localData
@@ -85,7 +85,6 @@ void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &ne
 
 	// Get predicted valued
 	const std::vector<std::vector<std::vector<double>>>& predictions = rfTest->forestPred->getPredictions();
-	std::cout << tot << std::endl;
 	class1Prob.clear();
 	std::for_each(predictions[0].begin(), predictions[0].end(), [&](std::vector<double> val) {class1Prob.push_back(val[0]);});
 }

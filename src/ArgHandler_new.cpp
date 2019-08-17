@@ -341,6 +341,7 @@ void ArgHandle::fillParams( jsoncons::json * params, std::vector<GridParams> &gr
 
 CommonParams ArgHandle::fillCommonParams() {
 	CommonParams commonParams;
+	commonParams.nFolds			= nFolds;
 	commonParams.seed			= seed;
 	commonParams.verboseLevel	= verboseLevel;
 	commonParams.verboseMPI		= verboseMPI;

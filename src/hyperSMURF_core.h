@@ -17,7 +17,7 @@
 
 class hyperSMURFcore {
 public:
-	hyperSMURFcore(const CommonParams commonParams, const GridParams gridParams, MegaCache * const cache);
+	hyperSMURFcore(const CommonParams commonParams, const GridParams gridParams, MegaCache * const cache, uint8_t currentFold, size_t currentPart);
 	~hyperSMURFcore();
 
 	void train(std::vector<size_t> &posIdx, std::vector<size_t> &negIdx);
@@ -37,6 +37,9 @@ private:
 	CommonParams					commonParams;
 	GridParams						gridParams;
 	MegaCache * const				cache;
+	uint8_t							currentFold;	// these are used only in seed computation!
+	size_t							currentPart;	// ----- --- ---- ---- -- ---- ------------
+
 	std::vector<size_t>				posIdx;
 	std::vector<size_t>				negIdx;
 

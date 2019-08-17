@@ -89,9 +89,10 @@ struct GridParams {
 };
 
 struct CommonParams {
-	uint32_t	nn;
-	uint32_t	mm;
-	uint32_t	nFolds;
+	size_t		nn;
+	size_t		mm;
+	uint8_t		nFolds;
+	// uint32_t	nFolds;
 	uint32_t	seed;
 	uint32_t	verboseLevel;
 	std::string dataFilename;
@@ -130,6 +131,12 @@ inline void checkPtr( T * pointer, const char * file, int line ) {
 		std::cout << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML << std::endl;
 		abort();
 	}
+}
+
+template <typename T>
+inline void printVect( std::vector<T> vv ) {
+	std::for_each(vv.begin(), vv.end(), [&](T val) {std::cout << val << " "; });
+	std::cout << std::endl;
 }
 
 class Timer {

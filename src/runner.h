@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <chrono>	// Temporary, for sleeping a thread
 #include <mpi.h>
 
 #include "parSMURFUtils.h"
@@ -15,11 +17,19 @@
 
 class Runner{
 public:
-	Runner(MegaCache * const cache, Organizer &organ, CommonParams commonParams, std::vector<GridParams> gridParams);
+	Runner(int rank, int worldSize, MegaCache * const cache, Organizer &organ, CommonParams commonParams, std::vector<GridParams> gridParams);
 	~Runner() {};
 	void go();
 
+	std::vector<double> 		preds;
+
 private:
+	void partProcess(int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
+			CommonParams &commonParams, std::vector<GridParams> &gridParams, std::vector<size_t> &partsForThisRank,
+			uint8_t currentFold, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &preds);
+
+	int							rank;
+	int							worldSize;
 	MegaCache * const			cache;
 	Organizer 					organ;
 	CommonParams 				commonParams;

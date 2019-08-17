@@ -58,7 +58,7 @@ Folds::Folds(int rank, std::string foldFilename, size_t &nn, uint8_t &nnFolds, s
 			posIdx[i % nFolds].push_back(tempPosIdx[i]);
 		size_t tempPosSize = tempPosIdx.size();
 		for (size_t i = 0; i < tempNegIdx.size(); i++)
-			posIdx[(i + tempPosSize) % nFolds].push_back(tempPosIdx[i]);
+			negIdx[(i + tempPosSize) % nFolds].push_back(tempNegIdx[i]);
 	}
 }
 
