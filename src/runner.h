@@ -10,4 +10,20 @@
 #include "parSMURFUtils.h"
 #include "easylogging++.h"
 #include "MegaCache.h"
+#include "organizer.h"
 #include "hyperSMURF_core.h"
+
+class Runner{
+public:
+	Runner(MegaCache * const cache, Organizer &organ, CommonParams commonParams, std::vector<GridParams> gridParams);
+	~Runner() {};
+	void go();
+
+private:
+	MegaCache * const			cache;
+	Organizer 					organ;
+	CommonParams 				commonParams;
+	std::vector<GridParams> 	gridParams;
+
+
+};
