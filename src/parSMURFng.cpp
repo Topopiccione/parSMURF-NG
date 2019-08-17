@@ -44,10 +44,10 @@ int main(int argc, char ** argv){
 
 	// Megacache and organizer init
 	MegaCache mc(rank, worldSize, commonParams);
-	Organizer organ(&mc, rank, commonParams);
+	Organizer organ(rank, &mc, commonParams);
 
 	// Create an instance of the runner and launch the run
-	Runner runner(&mc, organ, commonParams, gridParams);
+	Runner runner(rank, &mc, organ, commonParams, gridParams);
 	runner.go();
 
 	// Supertest to check if hyperSMURFcore works, using MyData1.txt and MyData1L.txt

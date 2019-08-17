@@ -2,7 +2,7 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "organizer.h"
 
-Organizer::Organizer(MegaCache * const cache, int rank, CommonParams commonParams) :
+Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParams) :
 		rank {rank} {
 	// Test mode is the easiest: all the dataset is considered as test set
 	// Also, ignore the fold division and fill just the testIdx vectors with values from 0 to n-1
