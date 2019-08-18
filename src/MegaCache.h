@@ -31,6 +31,7 @@ public:
 	size_t					cacheSize;
 	size_t					m;				// number of features
 	size_t					n;				// number of examples
+	size_t					nFromFoldGen;
 	uint8_t					nFolds;			// number of folds
 	uint8_t					cacheMode;
 	bool					labelsImported;

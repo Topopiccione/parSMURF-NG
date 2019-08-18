@@ -2,13 +2,15 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "Folds.h"
 
-Folds::Folds(int rank, std::string foldFilename, size_t &nn, uint8_t &nnFolds, std::vector<uint8_t> &labels, const bool * const labelsImported) {
+Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead,
+		std::vector<uint8_t> &labels, const bool * const labelsImported) :
+		rank{rank} {
 	// Folds from file. This can be made concurrently and indipendently on each rank
 	if (!foldFilename.empty()) {
 		std::vector<uint8_t> tempFolds;
-		readFoldsFromFile(foldFilename, nn, nnFolds, tempFolds);
+		readFoldsFromFile(foldFilename, nRead, nnFolds, tempFolds);
 
-		n = nn;
+		n = nRead;
 		nFolds = nnFolds;
 		posIdx = std::vector<std::vector<size_t>>(nFolds);
 		negIdx = std::vector<std::vector<size_t>>(nFolds);
@@ -34,11 +36,11 @@ Folds::Folds(int rank, std::string foldFilename, size_t &nn, uint8_t &nnFolds, s
 		while(!(*labelsImported)) {}
 
 		nFolds = nnFolds;
-		n = nn;
+		n = nRead = labels.size();
 		posIdx = std::vector<std::vector<size_t>>(nFolds);
 		negIdx = std::vector<std::vector<size_t>>(nFolds);
 
-		for (size_t i = 0; i < n; i++)
+		for (size_t i = 0; i < labels.size(); i++)
 			(labels[i] > 0) ? tempPosIdx.push_back(i) : tempNegIdx.push_back(i);
 
 		// Only rank 0 shuffles, then broadcast the results.
@@ -64,23 +66,26 @@ Folds::Folds(int rank, std::string foldFilename, size_t &nn, uint8_t &nnFolds, s
 
 
 void Folds::readFoldsFromFile(const std::string foldFilename, size_t &n, uint8_t &nFolds, std::vector<uint8_t> &dstVect) {
-	n = 0;
-	uint8_t inData;
+	uint32_t inData;
 	dstVect.clear();
 
 	std::ifstream foldFile( foldFilename.c_str(), std::ios::in );
 	if (!foldFile)
 		throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
 
-	std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
+	if (rank == 0)
+		std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
 	nFolds = 0;
 	while (foldFile >> inData) {
-		dstVect.push_back( inData );
-		n++;
-		if (dstVect[n - 1] > nFolds) nFolds = dstVect[n - 1];
+		dstVect.push_back( (uint8_t)inData );
+		if (dstVect.back() > nFolds)
+			nFolds = dstVect.back();
 	}
-	std::cout << TXT_BIGRN << n << " values read." << TXT_NORML << std::endl;
+	n = dstVect.size();
+	if (rank == 0)
+		std::cout << TXT_BIGRN << n << " values read from fold file." << TXT_NORML << std::endl;
 	(nFolds)++;
-	std::cout << TXT_BIGRN << "Total number of folds: " << nFolds << TXT_NORML << std::endl;
+	if (rank == 0)
+		std::cout << TXT_BIGRN << "Total number of folds: " << (uint32_t) nFolds << TXT_NORML << std::endl;
 	foldFile.close();
 }
