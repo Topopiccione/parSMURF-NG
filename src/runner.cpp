@@ -105,7 +105,7 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 			if (partsForThisRank.size() > 0) {
 				currentPart = partsForThisRank.back();
 				partsForThisRank.pop_back();
-				std::cout << "Rank " << rank << " thread " << thrNum << " - popped " << currentPart << std::endl;
+				LOG(TRACE) << "Rank " << rank << " thread " << thrNum << " - popped " << currentPart;
 			} else {
 				p_partVectLock->unlock();
 				break;

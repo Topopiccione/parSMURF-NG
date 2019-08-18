@@ -120,7 +120,6 @@ struct CommonParams {
 // Various utility functions
 std::vector<std::string> generateRandomName( const int n );
 std::vector<std::string> generateNames(const size_t n);
-// void saveToFile( const std::vector<double> &preds, const std::vector<uint8_t> &folds, std::string outFilename );
 std::vector<std::string> split_str( std::string s, std::string delimiters );
 void printData(const double * const xx, const uint32_t * const yy, const size_t nn, const size_t mm, const bool printLabels );
 void transposeMatrix(double * const dst, const double * const src, const size_t nn, const size_t mm);
@@ -129,7 +128,7 @@ void checkLoggerConfFile();
 template <typename T>
 inline void checkPtr( T * pointer, const char * file, int line ) {
 	if (pointer == nullptr) {
-		std::cout << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML << std::endl;
+		LOG(TRACE) << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML;
 		abort();
 	}
 }

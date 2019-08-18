@@ -73,8 +73,7 @@ void Folds::readFoldsFromFile(const std::string foldFilename, size_t &n, uint8_t
 	if (!foldFile)
 		throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
 
-	if (rank == 0)
-		std::cout << TXT_BIBLU << "Reading fold file..." << TXT_NORML << std::endl;
+	LOG(TRACE) << TXT_BIBLU << "Reading fold file..." << TXT_NORML;
 	nFolds = 0;
 	while (foldFile >> inData) {
 		dstVect.push_back( (uint8_t)inData );
@@ -82,10 +81,8 @@ void Folds::readFoldsFromFile(const std::string foldFilename, size_t &n, uint8_t
 			nFolds = dstVect.back();
 	}
 	n = dstVect.size();
-	if (rank == 0)
-		std::cout << TXT_BIGRN << n << " values read from fold file." << TXT_NORML << std::endl;
 	(nFolds)++;
-	if (rank == 0)
-		std::cout << TXT_BIGRN << "Total number of folds: " << (uint32_t) nFolds << TXT_NORML << std::endl;
+	LOG(TRACE) << TXT_BIGRN << n << " values read from fold file." << TXT_NORML;
+	LOG(TRACE) << TXT_BIGRN << "Total number of folds: " << (uint32_t) nFolds << TXT_NORML;
 	foldFile.close();
 }
