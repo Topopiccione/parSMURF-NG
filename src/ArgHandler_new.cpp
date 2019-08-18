@@ -10,7 +10,7 @@ ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams
 		ensThreads( 0 ), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ), strCacheSize( "" ),
 		generateRandomFold( false ), readNFromFile( false ), verboseMPI( false ),
 		externalConfig( false ), printCurrentConfig( false ),
-		minFold( -1 ), maxFold( -1 ),
+		hoProportion( 0.0f ), minFold( -1 ), maxFold( -1 ),
 		argc( argc ), argv( argv ), mode( "" ), optim( "" ) {
 }
 
@@ -114,6 +114,7 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	ensThreads			= getFromJson<uint32_t>( &exec, "ensThrd", ensThreads );
 	rfThreads			= getFromJson<uint32_t>( &exec, "rfThrd", rfThreads );
 	strCacheSize		= getFromJson<std::string>( &exec, "cacheSize", strCacheSize );
+	hoProportion		= getFromJson<float>( &exec, "holdOutPror", hoProportion );
 
 	verboseMPI			= getFromJson<bool>( &exec, "verboseMPI", verboseMPI );
 	printCurrentConfig	= getFromJson<bool>( &exec, "printCfg", printCurrentConfig );
@@ -124,12 +125,7 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 }
 
 void ArgHandle::checkCommonConfig( int rank ) {
-	if (outFilename.empty()) {
-		if (rank == 0)
-			std::cout << TXT_BIYLW << "No output file name defined. Default used ('data':'outFile')." << TXT_NORML << std::endl;
-		outFilename = std::string( "output.txt" );
-	}
-
+	// MODES AND OPTIMIZATION
 	if (!mode.compare("cv"))
 		wmode = MODE_CV;
 	else if (!mode.compare("train")) {
@@ -143,24 +139,6 @@ void ArgHandle::checkCommonConfig( int rank ) {
 	else if (mode.length() > 0) {
 		if (rank == 0)
 			std::cout << TXT_BIRED << "Invalid prediction mode. Please specify either 'cv', 'train' or 'predict' (default is 'cv')." << TXT_NORML << std::endl;
-		exit(-1);
-	}
-
-	if (((wmode == MODE_TRAIN) | (wmode == MODE_PREDICT)) & (forestDirname.length() == 0)) {
-		if (rank == 0)
-			std::cout << TXT_BIRED << "When in training or prediction modes, specify the forest base directory ('data':'forestDir')." << TXT_NORML << std::endl;
-		exit(-1);
-	}
-
-	if (((wmode == MODE_TRAIN) | (wmode == MODE_PREDICT)) & (foldFilename.length() > 0)) {
-		if (rank == 0)
-			std::cout << TXT_BIYLW << "Ignoring fold filename in train or test mode." << TXT_NORML << std::endl;
-		foldFilename = "";
-	}
-
-	if ((wmode == MODE_CV) & (foldFilename == "") & (nFolds < 2)) {
-		if (rank == 0)
-			std::cout << TXT_BIRED << "In cross-validation mode, specify at least two folds ('folds':'nFolds')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
@@ -181,15 +159,42 @@ void ArgHandle::checkCommonConfig( int rank ) {
 	}
 
 
+	// INPUT AND OUTPUT FILES
 	if (dataFilename.empty()) {
 		if (rank == 0)
 			std::cout << TXT_BIRED << "Matrix file undefined ('data':'dataFile')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
-	if (labelFilename.empty()) {
+	if (outFilename.empty()) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "No output file name defined. Default used ('data':'outFile')." << TXT_NORML << std::endl;
+		outFilename = std::string( "output.txt" );
+	}
+
+	// Label file may not be specified when testing. In this case, no auroc/auprc are performed
+	if (labelFilename.empty() & (wmode != MODE_PREDICT)) {
 		if (rank == 0)
 			std::cout << TXT_BIRED << "Label file undefined ('data':'labelFile')." << TXT_NORML << std::endl;
+		exit(-1);
+	}
+
+	if (((wmode == MODE_TRAIN) | (wmode == MODE_PREDICT)) & (forestDirname.length() == 0)) {
+		if (rank == 0)
+			std::cout << TXT_BIRED << "When in training or prediction modes, specify the forest base directory ('data':'forestDir')." << TXT_NORML << std::endl;
+		exit(-1);
+	}
+
+	if ((wmode == MODE_PREDICT) & (foldFilename.length() > 0)) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "Ignoring fold filename in test mode." << TXT_NORML << std::endl;
+		foldFilename = "";
+	}
+
+	// TODO: The section of the fildFile and nFolds must be checked
+	if ((wmode == MODE_CV) & (foldFilename == "") & (nFolds < 2)) {
+		if (rank == 0)
+			std::cout << TXT_BIRED << "In cross-validation mode, specify at least two folds ('folds':'nFolds')." << TXT_NORML << std::endl;
 		exit(-1);
 	}
 
@@ -211,18 +216,7 @@ void ArgHandle::checkCommonConfig( int rank ) {
 	}
 
 
-	if (((wmode == MODE_TRAIN) | (wmode == MODE_PREDICT)) & (forestDirname.length() == 0)) {
-		if (rank == 0)
-			std::cout << TXT_BIRED << "When in training or prediction modes, specify the forest base directory ('data':'forestDir')." << TXT_NORML << std::endl;
-		exit(-1);
-	}
-
-	if ((wmode == MODE_CV) & (foldFilename == "") & (nFolds < 2)) {
-		if (rank == 0)
-			std::cout << TXT_BIRED << "In cross-validation mode, specify at least two folds ('folds':'nFolds')." << TXT_NORML << std::endl;
-		exit(-1);
-	}
-
+	// VARIOUS
 	if (seed == 0) {
 		seed = (uint32_t) time( NULL );
 		if (rank == 0)
@@ -265,6 +259,12 @@ void ArgHandle::checkCommonConfig( int rank ) {
 	if (verboseMPI == true) {
 		if (rank == 0)
 			std::cout << TXT_BIYLW << "MPI verbose enabled." << TXT_NORML << std::endl;
+	}
+
+	if (((woptimiz == OPT_AUTOGP_HO) | (woptimiz == OPT_GRID_HO)) & (hoProportion == 0.0f)) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "Hold-out proportion not defined. Setting default 30\% ('exec':'holdOutProp')" << TXT_NORML << std::endl;
+		hoProportion = 0.3f;
 	}
 }
 

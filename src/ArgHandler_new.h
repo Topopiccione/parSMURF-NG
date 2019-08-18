@@ -47,6 +47,8 @@ public:
 	bool			externalConfig;
 	bool			printCurrentConfig;
 
+	float			hoProportion;
+
 	uint32_t		minFold;
 	uint32_t		maxFold;
 

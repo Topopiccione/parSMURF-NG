@@ -25,7 +25,10 @@ public:
 	~Organizer() {}
 
 	std::vector<OrgStruct>		org;
+	CommonParams				commonParams;
 
 private:
+	void populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &negTrng, OrgStruct &out);
+
 	int							rank;
 };

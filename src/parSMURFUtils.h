@@ -112,6 +112,7 @@ struct CommonParams {
 	bool		noMtSender;
 	bool		customCV;
 	bool		foldsRandomlyGenerated;
+	float		hoProportion;
 	uint32_t	minFold;
 	uint32_t	maxFold;
 };

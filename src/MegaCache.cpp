@@ -102,6 +102,11 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 	uint32_t inData;
 	dstVect.clear();
 
+	if (labelFilename.empty() & commonParams.wmode == MODE_PREDICT) {
+		labelsImported = true;
+		return;
+	}
+
 	std::ifstream labelFile( labelFilename.c_str(), std::ios::in );
 	if (!labelFile)
 		throw std::runtime_error( TXT_BIRED + std::string("Error opening label file.") + TXT_NORML );
