@@ -56,7 +56,7 @@ void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &n
 	// This may be critical if we are going to reuse localData
 	std::unique_ptr<Data> input_data( new DataDouble( localData, nomi, tot, m + 1 ) );
 	rfTrain = new rfRanger( m, false, std::move(input_data), numTrees, mtry, rfThr, seedCustom );
-	rfTrain->train( true );
+	rfTrain->train( false );
 }
 
 void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
@@ -81,7 +81,7 @@ void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &ne
 	// This may be critical if we are going to reuse localData
 	std::unique_ptr<Data> test_data( new DataDouble( localData, nomi, tot, m + 1 ) );
 	rfTest = new rfRanger( rfTrain->forest, m, true, std::move(test_data), numTrees, mtry, rfThr, seedCustom );
-	rfTest->predict( true );
+	rfTest->predict( false );
 
 	// Get predicted valued
 	const std::vector<std::vector<std::vector<double>>>& predictions = rfTest->forestPred->getPredictions();
