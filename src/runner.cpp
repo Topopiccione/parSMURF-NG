@@ -26,7 +26,7 @@ void Runner::go() {
 
 		// Cycle on every fold
 		for (uint8_t currentFold = startingFold; currentFold < endingFold; currentFold++) {
-			LOG(TRACE) << TXT_BIBLU << "rank: " << rank << " starting fold " << currentFold << TXT_NORML;
+			LOG(TRACE) << TXT_BIBLU << "rank: " << rank << " starting fold " << (uint32_t) currentFold << TXT_NORML;
 
 			// Division between train and test sets have been already performed in the Organizer.
 			// PosTrng set is used in every partition, while NegTrng must be subdivided.

@@ -27,7 +27,7 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 		LOG(TRACE) << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML;
 
 	size_t datasize = n * m * sizeof(double);
-	LOG(TRACE) << TXT_BIYLW << "Size of dataset: " << datasize << " bytes. ";
+	LOG(TRACE) << TXT_BIYLW << "Size of dataset: " << datasize << " bytes. " << TXT_NORML;
 	if (datasize <= cacheSize) {
 		cacheMode = FULLCACHEMODE;
 		LOG(TRACE) << "Enabling full cache mode." << TXT_NORML;
@@ -133,7 +133,6 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 
 void MegaCache::generateFolds() {
 	foldManager = Folds(rank, foldFilename, nFolds, nFromFoldGen, labels, &labelsImported);
-	LOG(TRACE) << TXT_BIGRN << nFolds << "Generated" << TXT_NORML;
 	foldsImported = true;
 }
 

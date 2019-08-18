@@ -128,7 +128,7 @@ void checkLoggerConfFile();
 template <typename T>
 inline void checkPtr( T * pointer, const char * file, int line ) {
 	if (pointer == nullptr) {
-		LOG(TRACE) << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML;
+		std::cout << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML << std::endl;
 		abort();
 	}
 }
