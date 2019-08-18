@@ -3,10 +3,11 @@
 #include "Folds.h"
 
 Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead,
-		std::vector<uint8_t> &labels, const bool * const labelsImported) :
+		std::vector<uint8_t> &labels) :
 		rank{rank} {
 	// Folds from file. This can be made concurrently and indipendently on each rank
 	if (!foldFilename.empty()) {
+		LOG(TRACE) << TXT_BIBLU << "Rank: " << rank << " reading folds from file" << TXT_NORML;
 		std::vector<uint8_t> tempFolds;
 		readFoldsFromFile(foldFilename, nRead, nnFolds, tempFolds);
 
@@ -14,9 +15,6 @@ Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead
 		nFolds = nnFolds;
 		posIdx = std::vector<std::vector<size_t>>(nFolds);
 		negIdx = std::vector<std::vector<size_t>>(nFolds);
-
-		// Now patiently wait until labels have been imported...
-		while(!(*labelsImported)) {}
 
 		// ...then start doing our own business
 		size_t tempIdx = 0;
@@ -31,10 +29,9 @@ Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead
 	// Folds randomly generated. Only rank 0 generate the random division, then broadcast
 	// to the other ranks
 	} else {
+		LOG(TRACE) << TXT_BIBLU << "Rank: " << rank << " generating random folds" << TXT_NORML;
 		std::vector<size_t> tempPosIdx;
 		std::vector<size_t> tempNegIdx;
-		// Patiently wait until labels have been imported...
-		while(!(*labelsImported)) {}
 
 		nFolds = nnFolds;
 		n = nRead = labels.size();

@@ -16,12 +16,13 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	// Data access is done by MPI I/O primitives
 	std::thread t1( &MegaCache::detectNumberOfFeatures, this );
 	std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
-	std::thread t3( &MegaCache::generateFolds, this );
 
 	t1.join();
+	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << " - thread t1 has joined" << TXT_NORML;
 	t2.join();
-	t3.join();
+	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << " - thread t2 has joined" << TXT_NORML;
 
+	generateFolds();
 
 	if (!foldFilename.empty() & (nFromFoldGen != n))
 		LOG(TRACE) << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML;
@@ -132,7 +133,7 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 }
 
 void MegaCache::generateFolds() {
-	foldManager = Folds(rank, foldFilename, nFolds, nFromFoldGen, labels, &labelsImported);
+	foldManager = Folds(rank, foldFilename, nFolds, nFromFoldGen, labels);
 	foldsImported = true;
 }
 
@@ -153,23 +154,27 @@ void MegaCache::preloadAndPrepareData() {
 		char * tempBuf = new char[256];
 		std::memset(tempBuf, '\0', 256);
 
-		// Defining datatypes for MPI_View
-		// std::vector<int> count_proc(worldSize);
-		// std::fill(count_proc.begin(), count_proc.end(), bufSize / worldSize);
-		// std::vector<int> count_disp(worldSize);
-		// size_t tIdx = 0;
-		// std::for_each(count_disp.begin(), count_disp.end(), [&](int &val){val = bufSize / worldSize * tIdx++;});
-		// MPI_Datatype vect_d;
-		// MPI_Type_vector(1,bufSize/worldSize,bufSize, MPI_UNSIGNED_CHAR, &vect_d);
-		// MPI_Offset offset = (MPI_Offset) count_disp[rank];
-		//
-		// MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
-		MPI_File_set_view(dataFile_Mpih, rank * bufSize / worldSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+		LOG(TRACE) << TXT_BIBLU << "Setting MPI file view..." << TXT_NORML;
 
+		// Defining datatypes for MPI_View
+		std::vector<int> count_proc(worldSize);
+		std::fill(count_proc.begin(), count_proc.end(), bufSize / worldSize);
+		std::vector<int> count_disp(worldSize);
+		size_t tIdx = 0;
+		std::for_each(count_disp.begin(), count_disp.end(), [&](int &val){val = bufSize / worldSize * tIdx++;});
+		MPI_Datatype vect_d;
+		MPI_Type_vector(1,bufSize/worldSize,bufSize, MPI_UNSIGNED_CHAR, &vect_d);
+		MPI_Offset offset = (MPI_Offset) count_disp[rank];
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Offset filesize;
 		// TODO: experiment with MPI_Info
 		MPI_File_open(MPI_COMM_SELF, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
-		MPI_Offset filesize;
 		MPI_File_get_size(dataFile_Mpih, &filesize);
+		// MPI_File_set_view(dataFile_Mpih, 0, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+		MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
+		// NON USARE // MPI_File_set_view(dataFile_Mpih, rank * bufSize / worldSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
+		LOG(TRACE) << TXT_BIBLU << "Setting MPI file view done" << TXT_NORML;
 
 		LOG(TRACE) << "Rank: " << rank << " - " << filesize;
 		Timer ttt;

@@ -12,7 +12,7 @@
 class Folds {
 public:
 	Folds() {};
-	Folds(int rank, std::string foldFilename, uint8_t &nFolds, size_t &nRead, std::vector<uint8_t> &labels,  const bool * const labelsImported);
+	Folds(int rank, std::string foldFilename, uint8_t &nFolds, size_t &nRead, std::vector<uint8_t> &labels);
 	~Folds() {};
 
 	size_t								n;
