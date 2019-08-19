@@ -185,6 +185,12 @@ void ArgHandle::checkCommonConfig( int rank ) {
 		exit(-1);
 	}
 
+	if ((wmode == MODE_CV) & (forestDirname.length() > 0)) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "In CV mode, ignore forest directory ('data':'forestDir')." << TXT_NORML << std::endl;
+		forestDirname = "";
+	}
+
 	if ((wmode == MODE_PREDICT) & (foldFilename.length() > 0)) {
 		if (rank == 0)
 			std::cout << TXT_BIYLW << "Ignoring fold filename in test mode." << TXT_NORML << std::endl;
