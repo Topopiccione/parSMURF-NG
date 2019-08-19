@@ -194,15 +194,13 @@ void rfRanger::predict( bool verbose ) {
 	}
 }
 
-void rfRanger::saveForest( uint32_t nPart, std::string forestDirname ) {
+void rfRanger::saveForest( size_t nPart, std::string forestDirname ) {
 	// What kind of format should we give to all the saved forest?
 	// Pretty much something like... uhm... the user specifies a directory name
 	// and the application generates one file for each partititon.
-	// If we were really rad, this directory should be saved as a single
-	// compressed file.
+	// If we were really rad, this directory should be saved as a single compressed file.
 	forest->output_prefix = forestDirname + std::string( "/" ) + std::to_string( nPart ) + std::string( ".out" );
 
-	std::cout << "saving " << forest->output_prefix << " trained forest" << std::endl;
+	LOG(TRACE) << TXT_BIYLW << "Saving " << forest->output_prefix << " trained forest" << TXT_NORML << std::endl;
 	forest->saveToFile();
-
 }

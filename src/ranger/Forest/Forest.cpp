@@ -156,6 +156,11 @@ void Forest::initR(std::string dependent_variable_name, std::unique_ptr<Data> in
       unordered_variable_names, memory_saving_splitting, splitrule, predict_all, sample_fraction, alpha, minprop,
       holdout, prediction_type, num_random_splits, order_snps, max_depth);
 
+  //// ALE: adding loadFromFile from initCpp for importing forests in predict mode
+  if ((prediction_mode) & !load_forest_filename.empty()){
+	loadFromFile(load_forest_filename);
+  }
+
   // Set variables to be always considered for splitting
   if (!always_split_variable_names.empty()) {
     setAlwaysSplitVariables(always_split_variable_names);

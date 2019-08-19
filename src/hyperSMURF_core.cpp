@@ -59,7 +59,7 @@ void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &n
 	rfTrain->train( false );
 }
 
-void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
+void hyperSMURFcore::test(size_t currentPart, std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
 	// Assemble vector of idx
 	std::vector<size_t> idxs;
 	std::for_each(posIdxIn.begin(), posIdxIn.end(), [&idxs](size_t val){idxs.push_back(val);});
@@ -80,7 +80,13 @@ void hyperSMURFcore::test(std::vector<size_t> &posIdxIn, std::vector<size_t> &ne
 	// BEWARE! DataDouble applies a std::move to localData, whose status remains undefined afterwards!
 	// This may be critical if we are going to reuse localData
 	std::unique_ptr<Data> test_data( new DataDouble( localData, nomi, tot, m + 1 ) );
-	rfTest = new rfRanger( rfTrain->forest, m, true, std::move(test_data), numTrees, mtry, rfThr, seedCustom );
+
+	if (commonParams.wmode == MODE_CV)
+		rfTest = new rfRanger(rfTrain->forest, m, true, std::move(test_data), numTrees, mtry, rfThr, seedCustom);
+	else if (commonParams.wmode == MODE_PREDICT) {
+		std::string forestName = commonParams.forestDirname + std::string("/") + std::to_string(currentPart) + std::string(".out.forest");
+		rfTest = new rfRanger(forestName, m, true, std::move(test_data), numTrees, mtry, rfThr, seedCustom);
+	}
 	rfTest->predict( false );
 
 	// Get predicted valued
@@ -104,4 +110,8 @@ void hyperSMURFcore::copySamplesInLocalData(const size_t howMany, const std::vec
 		for (size_t j = 0; j < tempSample.size(); j++)
 			localData[i + startIdx + j*tot] = tempSample[j];
 	}
+}
+
+void hyperSMURFcore::saveTrainedForest(size_t currentPart) {
+	rfTrain->saveForest(currentPart, commonParams.forestDirname);
 }

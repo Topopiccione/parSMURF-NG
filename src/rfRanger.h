@@ -12,6 +12,8 @@
 #include "ForestSurvival.h"
 #include "ForestProbability.h"
 #include "DataFloat.h"
+#include "parSMURFUtils.h"
+#include "easylogging++.h"
 
 using namespace ranger;
 
@@ -27,7 +29,7 @@ public:
 
 	void train( bool verbose );
 	void predict( bool verbose );
-	void saveForest( uint32_t nPart, std::string forestDirname );
+	void saveForest( size_t nPart, std::string forestDirname );
 
 	Forest							*	forest;
 	ForestProbability				*	forestPred;

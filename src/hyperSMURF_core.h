@@ -21,9 +21,8 @@ public:
 	~hyperSMURFcore();
 
 	void train(std::vector<size_t> &posIdx, std::vector<size_t> &negIdx);
-	void saveTrainedForest();
-	void loadForest();
-	void test(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn);
+	void saveTrainedForest(size_t currentPart);
+	void test(size_t currentPart, std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn);
 
 	// Public vars
 	std::vector<double>				class1Prob;
