@@ -6,11 +6,6 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 		rank {rank}, commonParams{commonParams} {
 	// Test mode is the easiest: all the dataset is considered as test set
 	// Also, ignore the fold division and fill just the testIdx vectors with values from 0 to n-1
-	// TODO: Decide what to do when loading data and labels for testing mode. If no label file is
-	// specified, we should load only one of the two vectors and not run any auprc evaluation of
-	// the final predictions; if label file is specified, otherwise.
-	// TODO: The same applies to fold generation: in test mode, we should specify only a single
-	// fold (for example fold 0) or avoiding defining a fold structure at all
 	//
 	// We are now assuming that the fold manager generates only one fold and divides the test set
 	// according to the labelling. If no label file is present, only posIdx is loaded
@@ -91,15 +86,15 @@ void Organizer::populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &ne
 	// Shuffle the positives, too!
 	std::vector<size_t> tempPos = posTrng;
 	if (rank == 0)
-		std::random_shuffle(out.negTrng.begin(), out.negTrng.end());
+		std::random_shuffle(tempPos.begin(), tempPos.end());
 	MPI_Bcast(tempPos.data(), tempPos.size(), MPI_SIZE_T_, 0, MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Copy the divided sets into the output struct
 	std::memcpy(out.posTest.data(), tempPos.data(), posProp * sizeof(size_t));
 	std::memcpy(out.negTest.data(), negTrng.data(), negProp * sizeof(size_t));
-	std::memcpy(out.posTrng.data() + posProp, tempPos.data(), (posTrng.size() - posProp) * sizeof(size_t));
-	std::memcpy(out.negTrng.data() + negProp, negTrng.data(), (negTrng.size() - negProp) * sizeof(size_t));
+	std::memcpy(out.posTrng.data(), tempPos.data() + posProp, (posTrng.size() - posProp) * sizeof(size_t));
+	std::memcpy(out.negTrng.data(), negTrng.data() + negProp, (negTrng.size() - negProp) * sizeof(size_t));
 
 	// Finally, shuffle the training negatives
 	if (rank == 0)
