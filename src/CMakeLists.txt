@@ -13,8 +13,8 @@ add_subdirectory(zlib)
 add_subdirectory(easyloggingpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_NO_DEFAULT_LOG_FILE") # Disables myeasylog.log creation
 include_directories(ann_1.1.2/include/ANN)
 include_directories(ranger)
 include_directories(.)
@@ -38,6 +38,7 @@ SET(SRCCOMMON				"ArgHandler_new.cpp"
 FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
 SET(LOGGERSRC 				"easyloggingpp/easylogging++.cc")
 SET(SOURCESMAIN				"parSMURFng.cpp")
+
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
