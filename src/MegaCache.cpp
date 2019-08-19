@@ -16,11 +16,8 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	// Data access is done by MPI I/O primitives
 	std::thread t1( &MegaCache::detectNumberOfFeatures, this );
 	std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
-
 	t1.join();
-	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << " - thread t1 has joined" << TXT_NORML;
 	t2.join();
-	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << " - thread t2 has joined" << TXT_NORML;
 
 	generateFolds();
 
@@ -72,7 +69,7 @@ void MegaCache::detectNumberOfFeatures() {
 
 	// 1) detecting the number of columns
 	if (rank == 0)
-		LOG(TRACE) << TXT_BIBLU << "Detecting the number of features from data..." << TXT_NORML;
+		LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": Detecting the number of features from data..." << TXT_NORML;
 	// Get the length of the first line
 	char c;
 	size_t con = 0;
@@ -87,7 +84,7 @@ void MegaCache::detectNumberOfFeatures() {
 	dataFile.getline(buffer, con);
 	// split the string according to the standard delimiters of a csv or tsv file (space, tab, comma)
 	std::vector<std::string> splittedBuffer = split_str( buffer, " ,\t" );
-	LOG(TRACE) << TXT_BIGRN << splittedBuffer.size() << " features detected from data file." << TXT_NORML;
+	LOG(TRACE) << TXT_BIGRN << "Rank " << rank << ": " << splittedBuffer.size() << " features detected from data file." << TXT_NORML;
 	m = splittedBuffer.size();
 	dataFile.close();
 	delete[] buffer;
@@ -109,19 +106,19 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 	if (!labelFile)
 		throw std::runtime_error( TXT_BIRED + std::string("Error opening label file.") + TXT_NORML );
 
-	LOG(TRACE) << TXT_BIBLU << "Reading label file..." << TXT_NORML;
+	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": reading label file..." << TXT_NORML;
 	while (labelFile >> inData) {
 		dstVect.push_back( (uint8_t)inData );
 		con++;
 	}
 
-	LOG(TRACE) << TXT_BIGRN << con << " labels read" << TXT_NORML;
+	LOG(TRACE) << "Rank " << rank << ": " << con << " labels read" << TXT_NORML;
 	*valsRead = con;
 	labelFile.close();
 
 	// Count positives and fill posIdx
 	*nPos = (size_t) std::count( dstVect.begin(), dstVect.end(), 1 );
-	LOG(TRACE) << TXT_BIGRN << *nPos << " positives" << TXT_NORML;
+	LOG(TRACE) << TXT_BIGRN << "Rank " << rank << ": " << *nPos << " positives" << TXT_NORML;
 	posIdx = std::vector<size_t>(*nPos);
 	con = 0;
 	for (size_t i = 0; i < dstVect.size(); i++) {
@@ -154,27 +151,25 @@ void MegaCache::preloadAndPrepareData() {
 		char * tempBuf = new char[256];
 		std::memset(tempBuf, '\0', 256);
 
-		LOG(TRACE) << TXT_BIBLU << "Setting MPI file view..." << TXT_NORML;
-
 		// Defining datatypes for MPI_View
-		std::vector<int> count_proc(worldSize);
-		std::fill(count_proc.begin(), count_proc.end(), bufSize / worldSize);
-		std::vector<int> count_disp(worldSize);
-		size_t tIdx = 0;
-		std::for_each(count_disp.begin(), count_disp.end(), [&](int &val){val = bufSize / worldSize * tIdx++;});
 		MPI_Datatype vect_d;
-		MPI_Type_vector(1,bufSize/worldSize,bufSize, MPI_UNSIGNED_CHAR, &vect_d);
-		MPI_Offset offset = (MPI_Offset) count_disp[rank];
-
+		MPI_Offset offset;
+		{
+			std::vector<int> count_disp(worldSize);
+			size_t tIdx = 0;
+			std::for_each(count_disp.begin(), count_disp.end(), [&](int &val){val = bufSize / worldSize * tIdx++;});
+			MPI_Type_vector(1, bufSize/worldSize, bufSize, MPI_UNSIGNED_CHAR, &vect_d);
+			offset = (MPI_Offset) bufSize / worldSize;
+		}
 		MPI_Barrier(MPI_COMM_WORLD);
+
 		MPI_Offset filesize;
 		// TODO: experiment with MPI_Info
 		MPI_File_open(MPI_COMM_SELF, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
 		MPI_File_get_size(dataFile_Mpih, &filesize);
-		// MPI_File_set_view(dataFile_Mpih, 0, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 		MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
+		// MPI_File_set_view(dataFile_Mpih, 0, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 		// NON USARE // MPI_File_set_view(dataFile_Mpih, rank * bufSize / worldSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
-		LOG(TRACE) << TXT_BIBLU << "Setting MPI file view done" << TXT_NORML;
 
 		LOG(TRACE) << "Rank: " << rank << " - " << filesize;
 		Timer ttt;
@@ -182,51 +177,50 @@ void MegaCache::preloadAndPrepareData() {
 		while (dataRead < filesize) {
 			std::memset(buf, ' ', bufSize);
 			MPI_File_read_all(dataFile_Mpih, buf, bufSize, MPI_UNSIGNED_CHAR, &fstatus);
-			// MPI_Barrier(MPI_COMM_WORLD);
 			processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported, &labelCnt);
 			dataRead += (bufSize);
 		}
 		ttt.endTime();
 
-		LOG(TRACE) << TXT_BIYLW << elementsImported << " elements imported " << TXT_NORML;
-		LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << ": MPI import time = " << ttt.duration() << TXT_NORML;
+		LOG(TRACE) << TXT_BIYLW << "Rank " << rank << ": " << elementsImported << " elements imported " << TXT_NORML;
+		LOG(TRACE) << TXT_BIYLW << "Rank " << rank << ": MPI import time = " << ttt.duration() << TXT_NORML;
 
 		delete[] tempBuf;
 		delete[] buf;
 		MPI_File_close(&dataFile_Mpih);
 
-		// Check: load with STL and compare what has been read by MPI
-		std::vector<double> dataStd;
-		{
-			double inDouble;
-			size_t con = 0;
-			size_t labelCnt = 0;
-			size_t labelIdx = 0;
-			std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
-			if (!dataFile)
-				throw std::runtime_error( "Error opening matrix file." );
-
-			ttt.startTime();
-			while (dataFile >> inDouble) {
-				dataStd.push_back( inDouble );
-				labelCnt++;
-				if (labelCnt == m) {
-					dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
-					labelCnt = 0;
-				}
-				con++;
-			}
-			ttt.endTime();
-			LOG(TRACE) << "rank " << rank << " - " << con << " values read from label file.";
-			LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << ": STL import time = " << ttt.duration() << TXT_NORML;
-			dataFile.close();
-			// Now each rack compare what has been read via MPI
-			LOG(TRACE) << TXT_BIYLW << "rank " << rank << " - Checking... " << TXT_NORML;
-			for (size_t ii = 0; ii < dataStd.size(); ii++) {
-				if (dataStd[ii] != data[ii])
-					LOG(TRACE) << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii];
-			}
-		}
+		// // Check: load with STL and compare what has been read by MPI
+		// std::vector<double> dataStd;
+		// {
+		// 	double inDouble;
+		// 	size_t con = 0;
+		// 	size_t labelCnt = 0;
+		// 	size_t labelIdx = 0;
+		// 	std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
+		// 	if (!dataFile)
+		// 		throw std::runtime_error( "Error opening matrix file." );
+		//
+		// 	ttt.startTime();
+		// 	while (dataFile >> inDouble) {
+		// 		dataStd.push_back( inDouble );
+		// 		labelCnt++;
+		// 		if (labelCnt == m) {
+		// 			dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
+		// 			labelCnt = 0;
+		// 		}
+		// 		con++;
+		// 	}
+		// 	ttt.endTime();
+		// 	LOG(TRACE) << "rank " << rank << " - " << con << " values read from label file.";
+		// 	LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << ": STL import time = " << ttt.duration() << TXT_NORML;
+		// 	dataFile.close();
+		// 	// Now each rack compare what has been read via MPI
+		// 	LOG(TRACE) << TXT_BIYLW << "rank " << rank << " - Checking... " << TXT_NORML;
+		// 	for (size_t ii = 0; ii < dataStd.size(); ii++) {
+		// 		if (dataStd[ii] != data[ii])
+		// 			LOG(TRACE) << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii];
+		// 	}
+		// }
 	}
 }
 

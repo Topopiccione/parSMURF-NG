@@ -34,9 +34,9 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 				std::for_each(cache->foldManager.posIdx[j].begin(), cache->foldManager.posIdx[j].end(), [&](size_t val) {tempOrg.posTrng.push_back(val);});
 				std::for_each(cache->foldManager.negIdx[j].begin(), cache->foldManager.negIdx[j].end(), [&](size_t val) {tempOrg.negTrng.push_back(val);});
 			}
+
 			if (rank == 0)
 				std::random_shuffle(tempOrg.negTrng.begin(), tempOrg.negTrng.end());
-
 			MPI_Bcast(tempOrg.negTrng.data(), tempOrg.negTrng.size(), MPI_SIZE_T_, 0, MPI_COMM_WORLD);
 			MPI_Barrier(MPI_COMM_WORLD);
 
