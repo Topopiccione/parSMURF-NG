@@ -25,6 +25,7 @@ public:
 
 	void getSample(size_t idx, std::vector<double> &sample);
 	void getSamples(std::vector<size_t>, std::vector<double> &samples);
+	const std::vector<uint8_t> & getLabels();
 
 	int						rank;
 	int						worldSize;

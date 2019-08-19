@@ -14,6 +14,7 @@
 #include "MegaCache.h"
 #include "organizer.h"
 #include "hyperSMURF_core.h"
+#include "curves.h"
 
 class Runner{
 public:
@@ -28,6 +29,9 @@ private:
 	void partProcess(int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
 			CommonParams &commonParams, std::vector<GridParams> &gridParams, std::vector<size_t> &partsForThisRank,
 			uint8_t currentFold, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &preds);
+	void evaluatePartialCurves(const std::vector<double> &preds, const std::vector<size_t> &posTest,
+			const std::vector<size_t> &negTest, double * const auroc, double * const auprc);
+	void evaluateFinalCurves(const std::vector<double> &preds, double * const auroc, double * const auprc);
 
 	int							rank;
 	int							worldSize;

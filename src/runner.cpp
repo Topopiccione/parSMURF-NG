@@ -88,8 +88,22 @@ void Runner::go() {
 				for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
 					preds[organ.org[currentFold].negTest[i]] = gatherVect[cc++];
 			}
-			MPI_Barrier( MPI_COMM_WORLD );
 		}
+
+		// Last thing, evaulate and print the partial AUROC and AUPRC for this fold
+		if ((rank == 0) & (commonParams.wmode == MODE_CV)) {
+			double auroc, auprc;
+			evaluatePartialCurves(preds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
+			LOG(TRACE) << TXT_BICYA << "Fold " << (uint32_t) currentFold << ": auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML << std::endl;
+		}
+		MPI_Barrier( MPI_COMM_WORLD );
+	}
+
+	// Evaluate curves on the entire set
+	if ((rank == 0) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)) & (cache->getLabels().size() > 0)) {
+		double auroc, auprc;
+		evaluateFinalCurves(preds, &auroc, &auprc);
+		LOG(TRACE) << TXT_BICYA << "Final scores: auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML << std::endl;
 	}
 }
 
@@ -167,4 +181,28 @@ void Runner::savePredictions() {
 		}
 		outFile.close();
 	}
+}
+
+void Runner::evaluatePartialCurves(const std::vector<double> &preds, const std::vector<size_t> &posTest,
+		const std::vector<size_t> &negTest, double * const auroc, double * const auprc) {
+	std::vector<double> tempPreds(posTest.size() + negTest.size());
+	std::vector<uint8_t> tempLabs(posTest.size() + negTest.size());
+	// Copy predicitions in the temporary vector
+	size_t idx = 0;
+	std::for_each(posTest.begin(), posTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
+	std::for_each(negTest.begin(), negTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
+	std::fill(tempLabs.begin(), tempLabs.begin() + posTest.size(), 1);
+	std::fill(tempLabs.begin() + posTest.size(), tempLabs.end(), 0);
+
+	Curves ccc(tempLabs, tempPreds.data());
+	// BUG: Do not invert evalAUROC_ok() and evalAUPRC()...
+	*auroc = ccc.evalAUROC_ok();
+	*auprc = ccc.evalAUPRC();
+}
+
+void Runner::evaluateFinalCurves(const std::vector<double> &preds, double * const auroc, double * const auprc) {
+	Curves ccc(cache->getLabels(), preds.data());
+	// BUG: Do not invert evalAUROC_ok() and evalAUPRC()...
+	*auroc = ccc.evalAUROC_ok();
+	*auprc = ccc.evalAUPRC();
 }

@@ -269,3 +269,7 @@ void MegaCache::getSample(size_t idx, std::vector<double> &sample) {
 		LOG(TRACE) << TXT_BIRED << "Partial cache not yet implemented..." << TXT_NORML;
 	}
 }
+
+const std::vector<uint8_t> & MegaCache::getLabels() {
+	return labels;
+}
