@@ -67,7 +67,7 @@ void checkLoggerConfFile() {
 		std::ofstream confFile( "logger.conf", std::ios::out );
 		confFile << "* GLOBAL:" << std::endl;
 		confFile << "    FORMAT               =  \"%datetime %msg\"" << std::endl;
-		confFile << "    FILENAME             =  \"logGridMPI.log\"" << std::endl;
+		confFile << "    FILENAME             =  \"default_ParSMURFng.log\"" << std::endl;
 		confFile << "    ENABLED              =  true" << std::endl;
 		confFile << "    TO_FILE              =  true" << std::endl;
 		confFile << "    TO_STANDARD_OUTPUT   =  true" << std::endl;
