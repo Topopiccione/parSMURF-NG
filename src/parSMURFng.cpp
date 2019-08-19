@@ -75,10 +75,10 @@ int main(int argc, char ** argv){
 	if ((rank == 0) && (commonParams.timeFilename != "")) {
 		// Append computation time to log file, if specified by option 'exec':'timeFile'
 		std::ofstream timeFile( commonParams.timeFilename.c_str(), std::ios::out | std::ios::app );
-		timeFile << "#Working procs: " << 1
+		timeFile << "#Working procs: " << worldSize
 				<< " - #ensThreads: " << commonParams.nThr
 				<< " - #rfThreads: " << commonParams.rfThr
-				<< " - #folds: " << commonParams.nFolds
+				<< " - #folds: " << (uint32_t) commonParams.nFolds
 				<< " - #parts: " << gridParams[0].nParts
 				<< " - #fp: " << gridParams[0].fp
 				<< " - #ratio: " << gridParams[0].ratio
