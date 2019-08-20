@@ -2,6 +2,7 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #pragma once
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <numeric>
@@ -34,6 +35,8 @@ private:
 			uint8_t currentFold, size_t internalDiv, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &preds);
 	void evaluatePartialCurves(const std::vector<double> &preds, const std::vector<size_t> &posTest,
 			const std::vector<size_t> &negTest, double * const auroc, double * const auprc);
+	GridParams helpMeObiOneKenobiYouAreMyOnlyHope(bool &endReached);
+	void clearPending(GridParams currentParams);
 
 	int							rank;
 	int							worldSize;

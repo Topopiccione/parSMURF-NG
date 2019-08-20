@@ -121,8 +121,11 @@ void Optimizer::runOpt() {
 		}
 
 		internalGridParams.push_back(currentParams);
-		if ((commonParams.woptimiz == OPT_AUTOGP_CV) | (commonParams.woptimiz == OPT_AUTOGP_HO))
+		if ((commonParams.woptimiz == OPT_AUTOGP_CV) | (commonParams.woptimiz == OPT_AUTOGP_HO)) {
 			gridParams.push_back(currentParams);
+			// Remove the "pending" status from the point that has been just evaluated
+			clearPending(currentParams);
+		}
 	}
 
 	// Time to find the best combination and save its index for future use
@@ -157,7 +160,7 @@ GridParams Optimizer::getNextParams(bool &endReached) {
 		} else
 			return gridParams[paramsIdx++];
 	} else {
-		// TODO: interrogate the oracle
+		return helpMeObiOneKenobiYouAreMyOnlyHope(endReached);
 	}
 }
 
@@ -221,4 +224,55 @@ void Optimizer::evaluatePartialCurves(const std::vector<double> &preds, const st
 	// BUG: Do not invert evalAUROC_ok() and evalAUPRC()...
 	*auroc = ccc.evalAUROC_ok();
 	*auprc = ccc.evalAUPRC();
+}
+
+GridParams Optimizer::helpMeObiOneKenobiYouAreMyOnlyHope(bool &endReached) {
+	// Interrogate the oracle
+	std::string commandLine = std::string("python3 optimizer.py " + commonParams.cfgFilename);
+	int retVal = std::system( commandLine.c_str() );
+
+	// Open the tempOpt.txt file and get a pending point to be evaluated
+	std::string fileLine;
+	std::ifstream tempFile( "tempOpt.txt", std::ios::out );
+	GridParams tempGridParam{0, 0, 0, 0, 0, 0, 0, 0};
+	while (std::getline( tempFile, fileLine )) {
+		std::vector<std::string> splittedStr = split_str(fileLine, " ");
+		if (splittedStr[0].compare("DONE") == 0) {
+			endReached = true;
+			return tempGridParam;
+		}
+		if (splittedStr[6].compare("P") == 0) {
+			LOG(TRACE) << "Params read: " << splittedStr[0] << " " << splittedStr[1] << " " << splittedStr[2] << " "
+				<< splittedStr[3] << " " << splittedStr[4] << " " << splittedStr[5] << std::endl;
+			tempGridParam.nParts	= atoi( splittedStr[0].c_str() );
+			tempGridParam.fp		= atoi( splittedStr[1].c_str() );
+			tempGridParam.ratio		= atoi( splittedStr[2].c_str() );
+			tempGridParam.k			= atoi( splittedStr[3].c_str() );
+			tempGridParam.nTrees	= atoi( splittedStr[4].c_str() );
+			tempGridParam.mtry		= atoi( splittedStr[5].c_str() );
+			tempFile.close();
+			return tempGridParam;
+		}
+	}
+	tempFile.close();
+}
+
+void Optimizer::clearPending(GridParams currentParams) {
+	std::string fileLine;
+	std::ifstream tempFile( "tempOpt.txt", std::ios::out );
+	std::ofstream tempOutFile( "tempOpt__.txt", std::ios::out );
+	while (std::getline( tempFile, fileLine )) {
+		std::vector<std::string> splittedStr = split_str(fileLine, " ");
+		if (splittedStr[6].compare("P") == 0) {
+			tempOutFile << std::to_string(currentParams.nParts) << " " << std::to_string(currentParams.fp) << " " <<
+				std::to_string(currentParams.ratio) << " " << std::to_string(currentParams.k) << " " <<
+				std::to_string(currentParams.nTrees) << " " << std::to_string(currentParams.mtry) << " " <<
+				std::to_string( -(currentParams.auprc) ) << std::endl;
+		} else {
+			tempOutFile << fileLine << std::endl;
+		}
+	}
+	tempFile.close();
+	tempOutFile.close();
+	std::rename("tempOpt__.txt", "tempOpt.txt");
 }

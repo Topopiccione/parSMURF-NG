@@ -39,7 +39,7 @@ def unpackVariables(params):
 	return BO_params
 
 def importFromFile(varNames, fixedVars):
-	# line in file are defined as
+	# line in file are defined as:
 	# nParts fp ratio k numTrees mtry auprc/Pending
 	names = ['nParts', 'fp', 'ratio', 'k', 'numTrees', 'mtry']
 	pointLst = []
@@ -53,6 +53,9 @@ def importFromFile(varNames, fixedVars):
 					continue
 				newPoint.append(int(spltLine[id]))
 			pointLst.append(newPoint)
+			if spltLine[6] is 'P':
+				print("Point already pending. Quitting the optimizer...")
+				exit(0)
 			auprcs.append(float(spltLine[6]))
 	return pointLst, auprcs
 
@@ -71,7 +74,11 @@ def updateFile(pt):
 	with open("tempOpt.txt", "a") as fout:
 		fout.write(" ".join([str(x) for x in pt]))
 
-def optimize(cfgFilename, iterCount):
+def tellHimToStopGoddamit():
+	with open("tempOpt.txt", "a") as fout:
+		fout.write("DONE")
+
+def optimize(cfgFilename):
 	params = importJsonCfg(cfgFilename)
 	BO_params = unpackVariables(params)
 
@@ -79,12 +86,15 @@ def optimize(cfgFilename, iterCount):
 	opt = Optimizer(varSpace, base_estimator=params["BaseEstimator"], acq_func=params["AcquisitionFunction"],
 		acq_optimizer=params["AcquisitionOptimizer"])
 
-	optMaxIter = params["maxOptIter"]
+	optMaxIter = int(params["maxOptIter"])
 
 	if os.path.isfile("tempOpt.txt"):
 		pointLst, auprcs = importFromFile(BO_params["VariableNames"], BO_params["FixedVars"])
 		for i in range(0, len(auprcs)):
 			opt.tell(pointLst[i], auprcs[i])
+
+	if len(pointLst) > optMaxIter:
+		tellHimToStopGoddamit()
 
 	pt = opt.ask()
 	pt = convertPoint(pt, BO_params["VariableNames"], BO_params["FixedVars"])
@@ -93,5 +103,4 @@ def optimize(cfgFilename, iterCount):
 
 if __name__ == "__main__":
 	cfgFilename = sys.argv[1]
-	iterCount = sys.argv[2]
-	optimize(cfgFilename, iterCount)
+	optimize(cfgFilename)
