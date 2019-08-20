@@ -114,7 +114,7 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	ensThreads			= getFromJson<uint32_t>( &exec, "ensThrd", ensThreads );
 	rfThreads			= getFromJson<uint32_t>( &exec, "rfThrd", rfThreads );
 	strCacheSize		= getFromJson<std::string>( &exec, "cacheSize", strCacheSize );
-	hoProportion		= getFromJson<float>( &exec, "holdOutPror", hoProportion );
+	hoProportion		= getFromJson<float>( &exec, "holdOutProp", hoProportion );
 
 	verboseMPI			= getFromJson<bool>( &exec, "verboseMPI", verboseMPI );
 	printCurrentConfig	= getFromJson<bool>( &exec, "printCfg", printCurrentConfig );
@@ -364,6 +364,7 @@ CommonParams ArgHandle::fillCommonParams() {
 	commonParams.cacheSize				= cacheSize;
 	commonParams.rfVerbose 				= (verboseLevel >= VERBRF);
 	commonParams.foldsRandomlyGenerated = generateRandomFold;
+	commonParams.hoProportion			= hoProportion;
 	commonParams.minFold				= minFold;
 	commonParams.maxFold				= maxFold;
 	commonParams.cfgFilename			= extConfigFilename;
