@@ -5,6 +5,8 @@
 Optimizer::Optimizer(int rank, int worldSize, MegaCache * const cache, CommonParams commonParams,
 		std::vector<GridParams> &gridParams, Organizer &organ) : rank{rank}, worldSize{worldSize}, cache{cache},
 		commonParams{commonParams}, gridParams{gridParams}, organ{organ} {
+	if ((commonParams.woptimiz == OPT_AUTOGP_CV) | (commonParams.woptimiz == OPT_AUTOGP_HO))
+		gridParams.clear();
 }
 
 void Optimizer::runOpt() {
@@ -107,10 +109,20 @@ void Optimizer::runOpt() {
 		// Save the average in the gridParams struct
 		currentParams.auroc = std::accumulate(aurocsPerFold.begin(), aurocsPerFold.end(), 0.0) / (double)aurocsPerFold.size();
 		currentParams.auprc = std::accumulate(auprcsPerFold.begin(), auprcsPerFold.end(), 0.0) / (double)auprcsPerFold.size();
-		if (rank == 0)
+		if (rank == 0) {
+			LOG(INFO) << TXT_BICYA << "OPT: Current parameters: idx = " << bestModelIdx <<
+				" - nParts: " << currentParams.nParts <<
+				" - fp: " << currentParams.fp <<
+				" - ratio: " << currentParams.ratio <<
+				" - k: " << currentParams.k <<
+				" - numTrees: " << currentParams.nTrees <<
+				" - mtry: " << currentParams.mtry << TXT_NORML;
 			LOG(INFO) << TXT_BICYA << "OPT: Params opt final score: auroc = " << currentParams.auroc << "  -  auprc = " << currentParams.auprc << TXT_NORML << std::endl;
+		}
 
 		internalGridParams.push_back(currentParams);
+		if ((commonParams.woptimiz == OPT_AUTOGP_CV) | (commonParams.woptimiz == OPT_AUTOGP_HO))
+			gridParams.push_back(currentParams);
 	}
 
 	// Time to find the best combination and save its index for future use
