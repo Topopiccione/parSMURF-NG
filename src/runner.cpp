@@ -8,6 +8,13 @@ Runner::Runner(int rank, int worldSize, MegaCache * const cache, Organizer &orga
 }
 
 void Runner::go() {
+	size_t bestParamsIdx;
+	if (commonParams.woptimiz != OPT_NO)
+		bestParamsIdx = runOptimizer();
+	else {
+		bestParamsIdx = 0;
+	}
+
 	// Set the number of folds according to what has been specified in the options
 	uint8_t startingFold, endingFold;
 	{
@@ -18,7 +25,7 @@ void Runner::go() {
 		if (commonParams.maxFold != -1)
 			endingFold = commonParams.maxFold;
 		if ((commonParams.wmode == MODE_TRAIN) | (commonParams.wmode == MODE_PREDICT)){
-			LOG(TRACE) << TXT_BIYLW << "rank " << rank << ": ignoring fold specifications in TRAIN and PREDICT modes" << TXT_NORML;
+			LOG(INFO) << TXT_BIYLW << "rank " << rank << ": ignoring fold specifications in TRAIN and PREDICT modes" << TXT_NORML;
 			startingFold = 0;
 			endingFold = 1;
 		}
@@ -29,7 +36,7 @@ void Runner::go() {
 		preds = std::vector<double>(commonParams.nn, 0);
 
 	for (uint8_t currentFold = startingFold; currentFold < endingFold; currentFold++) {
-		LOG(TRACE) << TXT_BIBLU << "rank: " << rank << " starting fold " << (uint32_t) currentFold << TXT_NORML;
+		LOG(INFO) << TXT_BIBLU << "rank: " << rank << " starting fold " << (uint32_t) currentFold << TXT_NORML;
 
 		// Division between train and test sets have been already performed in the Organizer.
 		// PosTrng set is used in every partition, while NegTrng must be subdivided.
@@ -39,12 +46,12 @@ void Runner::go() {
 		{
 			// Evaluate the number of partitions assigned to this rank
 			// This formula evenly distributes the partitions among ranks
-			size_t partsAssigned = gridParams[0].nParts / worldSize + ((gridParams[0].nParts % worldSize) > rank);
+			size_t partsAssigned = gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > rank);
 			// Evaluate the idx of the first partition of this rank
 			size_t tempIdx = 0;
 			for (size_t i = 0; i < rank; i++)
-				tempIdx += gridParams[0].nParts / worldSize + ((gridParams[0].nParts % worldSize) > i);
-			size_t nextIdx = tempIdx + gridParams[0].nParts / worldSize + ((gridParams[0].nParts % worldSize) > rank);
+				tempIdx += gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > i);
+			size_t nextIdx = tempIdx + gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > rank);
 			for (size_t i = tempIdx; i < nextIdx; i++)
 				partsForThisRank.push_back(i);
 		}
@@ -58,7 +65,7 @@ void Runner::go() {
 			std::vector<std::thread> threadVect;
 			for (size_t i = 0; i < commonParams.nThr; i++) {
 				threadVect.push_back(std::thread(&Runner::partProcess, this, rank, worldSize, i, cache, std::ref(organ),
-					std::ref(commonParams), std::ref(gridParams), std::ref(partsForThisRank), currentFold,
+					std::ref(commonParams), gridParams[bestParamsIdx], std::ref(partsForThisRank), currentFold,
 					&p_accumulLock, &p_partVectLock, std::ref(localPreds)));
 			}
 			for (size_t i = 0; i < commonParams.nThr; i++)
@@ -94,7 +101,7 @@ void Runner::go() {
 		if ((rank == 0) & (commonParams.wmode == MODE_CV)) {
 			double auroc, auprc;
 			evaluatePartialCurves(preds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
-			LOG(TRACE) << TXT_BICYA << "Fold " << (uint32_t) currentFold << ": auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML << std::endl;
+			LOG(INFO) << TXT_BICYA << "Fold " << (uint32_t) currentFold << ": auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
 		}
 		MPI_Barrier( MPI_COMM_WORLD );
 	}
@@ -103,12 +110,12 @@ void Runner::go() {
 	if ((rank == 0) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)) & (cache->getLabels().size() > 0)) {
 		double auroc, auprc;
 		evaluateFinalCurves(preds, &auroc, &auprc);
-		LOG(TRACE) << TXT_BICYA << "Final scores: auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML << std::endl;
+		LOG(INFO) << TXT_BICYA << "Final scores: auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
 	}
 }
 
 void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
-		CommonParams &commonParams, std::vector<GridParams> &gridParams, std::vector<size_t> &partsForThisRank,
+		CommonParams &commonParams, GridParams gridParams, std::vector<size_t> &partsForThisRank,
 		uint8_t currentFold, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &localPreds) {
 	// We are inside a thread that processes a partition. We iterate until partsForThisRank is empty.
 	while (true) {
@@ -131,7 +138,7 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 			// Evaluate how many negative must be taken + start and end idxs in organ.org[currentFold].negTrng
 			// (see partitionMPI.cpp in the old parSMURF)
 			size_t totNeg = organ.org[currentFold].negTrng.size();
-			size_t nParts = gridParams[0].nParts;
+			size_t nParts = gridParams.nParts;
 			size_t negInEachPartition = ceil(totNeg / (double)(nParts));
 			size_t totLocalNeg = (currentPart != (nParts - 1)) ? negInEachPartition : totNeg - (negInEachPartition * (nParts - 1));
 			size_t negIdx = currentPart * negInEachPartition;
@@ -141,9 +148,8 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 		}
 
 		// Good news, we can build an instance of hyperSMURFcore and start the computation
-		GridParams gp = gridParams[0];
 		{
-			hyperSMURFcore hsCore(commonParams, gp, cache, currentFold, currentPart);
+			hyperSMURFcore hsCore(commonParams, gridParams, cache, currentFold, currentPart);
 			if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_TRAIN))
 				hsCore.train(organ.org[currentFold].posTrng, localTrngNeg);
 			if (commonParams.wmode == MODE_TRAIN) {
@@ -155,7 +161,7 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 				// In hsCore.class1Prob there are the predictions for the samples in the posTest and negTest
 				// Now accumulate them in the local (for the rank) output vector
 				size_t testSize = organ.org[currentFold].posTest.size() + organ.org[currentFold].negTest.size();
-				double divider = 1.0 / gp.nParts;
+				double divider = 1.0 / gridParams.nParts;
 				p_accumulLock->lock();
 					for (size_t i = 0; i < testSize; i++)
 						localPreds[i] += (hsCore.class1Prob[i] * divider);
@@ -205,4 +211,22 @@ void Runner::evaluateFinalCurves(const std::vector<double> &preds, double * cons
 	// BUG: Do not invert evalAUROC_ok() and evalAUPRC()...
 	*auroc = ccc.evalAUROC_ok();
 	*auprc = ccc.evalAUPRC();
+}
+
+size_t Runner::runOptimizer() {
+	// Optimization run like this:
+	// 1 select a combination of hyper-parameters or the grid or by BO, Each fold has an
+	//      Organizer.OrgStruct.internalDivision which represent an internal HO or an internal CV.
+	//      Supposing an external 5-fold CV, and internal HO, we have one HO for each fold => 5 intenal auprc values;
+	//      Supposing an external 5-fold CV, and internal 4-fold CV, we have 5*4 internal auprc values
+	// 2 run a train/test session for each of the 5 internal HO, average the auprc and store it somewhere;
+	//   if in internal CV, perform the train/test on every internal fold for every internalDivision and average
+	//   each value. We will have 5 averaged auprc. Average it and store it somewhere
+	// 3 select the next grid combination, or interrogate the BO, and repeat
+	// 4 at the end of this loop, select the hyper-parameter combination that on average scored best
+	// 5 do a Runner::go() with this combination for testing the combination on every test set
+
+	Optimizer opt(rank, worldSize, cache, commonParams, gridParams, organ);
+	opt.runOpt();
+	return opt.bestModelIdx;
 }
