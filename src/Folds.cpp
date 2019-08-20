@@ -25,7 +25,7 @@ Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead
 				negIdx[val].push_back(tempIdx);
 			tempIdx++;
 		});
-		LOG(TRACE) << TXT_BIGRN << (uint32_t) nFolds << " folds detected from file" << TXT_NORML;
+		LOG(INFO) << TXT_BIGRN << (uint32_t) nFolds << " folds detected from file" << TXT_NORML;
 	// Folds randomly generated. Only rank 0 generate the random division, then broadcast
 	// to the other ranks
 	} else {
@@ -60,7 +60,7 @@ Folds::Folds(int rank, std::string foldFilename, uint8_t &nnFolds, size_t &nRead
 		for (size_t i = 0; i < tempNegIdx.size(); i++)
 			negIdx[(i + tempPosSize) % nFolds].push_back(tempNegIdx[i]);
 
-		LOG(TRACE) << TXT_BIGRN << (uint32_t) nFolds << " folds generated" << TXT_NORML;
+		LOG(INFO) << TXT_BIGRN << (uint32_t) nFolds << " folds generated" << TXT_NORML;
 	}
 }
 
@@ -82,7 +82,7 @@ void Folds::readFoldsFromFile(const std::string foldFilename, size_t &n, uint8_t
 	}
 	n = dstVect.size();
 	(nFolds)++;
-	LOG(TRACE) << TXT_BIGRN << n << " values read from fold file." << TXT_NORML;
-	LOG(TRACE) << TXT_BIGRN << "Total number of folds: " << (uint32_t) nFolds << TXT_NORML;
+	LOG(INFO) << TXT_BIGRN << n << " values read from fold file." << TXT_NORML;
+	LOG(INFO) << TXT_BIGRN << "Total number of folds: " << (uint32_t) nFolds << TXT_NORML;
 	foldFile.close();
 }
