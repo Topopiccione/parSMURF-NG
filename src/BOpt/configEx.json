@@ -5,6 +5,8 @@
 		"AcquisitionOptimizer": "auto",
 		"maxOptIter": 50,
 		"EarlyStoppingCriteria": "deltaY",
+		"EarlyStoppingDelta": 0.01,
+		"EarlyStoppingNBest": 3,
 
 		"Variables": [
 			{"Name": "nParts",		"Type": "Integer",	"min": 10,	"max": 25},

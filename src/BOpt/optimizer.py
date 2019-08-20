@@ -70,13 +70,22 @@ def convertPoint(pt, varNames, fixedVars):
 	newPt.append('P')
 	return newPt
 
-def updateFile(pt):
-	with open("tempOpt.txt", "a") as fout:
-		fout.write(" ".join([str(x) for x in pt]))
+def shouldIContinue(pointLst, optMaxIter, nBest, delta):
+	if len(pointLst) is 0:
+		return
+	if len(pointLst) > optMaxIter:
+		with open("tempOpt.txt", "a") as fout:
+			fout.write("DONE")
+		exit(0)
 
-def tellHimToStopGoddamit():
-	with open("tempOpt.txt", "a") as fout:
-		fout.write("DONE")
+	resList = sorted(pointLst, key=lambda x: float(x[6]), reverse=False)
+	if abs(resList[0][6] - resList[n_best-1][6]) < delta:
+		print(" *** Early stopping triggered *** ", flush = True )
+		with open("tempOpt.txt", "a") as fout:
+			fout.write("DONE")
+		exit(0)
+
+
 
 def optimize(cfgFilename):
 	params = importJsonCfg(cfgFilename)
@@ -88,17 +97,19 @@ def optimize(cfgFilename):
 
 	optMaxIter = int(params["maxOptIter"])
 
+	pointLst = []
+
 	if os.path.isfile("tempOpt.txt"):
 		pointLst, auprcs = importFromFile(BO_params["VariableNames"], BO_params["FixedVars"])
 		for i in range(0, len(auprcs)):
 			opt.tell(pointLst[i], auprcs[i])
 
-	if len(pointLst) > optMaxIter:
-		tellHimToStopGoddamit()
+	shouldIContinue(pointLst, optMaxIter, int(params["EarlyStoppingNBest"]), float(params["EarlyStoppingDelta"]))
 
 	pt = opt.ask()
 	pt = convertPoint(pt, BO_params["VariableNames"], BO_params["FixedVars"])
-	updateFile(pt)
+	with open("tempOpt.txt", "a") as fout:
+		fout.write(" ".join([str(x) for x in pt]))
 
 
 if __name__ == "__main__":
