@@ -77,3 +77,5 @@ add_dependencies(parSMURFng easyloggingpp)
 set_target_properties(parSMURFng PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
 set_target_properties(parSMURFng PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
 target_link_libraries(parSMURFng ANN ${zlib_LIB} ${MPI_LIBRARIES})
+
+add_executable(datasetGen "datasetGen.cpp")
