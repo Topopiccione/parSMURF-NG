@@ -48,15 +48,15 @@ def importFromFile(varNames, fixedVars):
 		for line in f:
 			spltLine = line.split(sep=' ')
 			newPoint = []
+			if spltLine[-1] is 'P':
+				print("Point already pending. Quitting the optimizer...")
+				exit(0)
 			for id in range(6):
 				if names[id] in fixedVars:
 					continue
 				newPoint.append(int(spltLine[id]))
 			pointLst.append(newPoint)
-			if spltLine[6] is 'P':
-				print("Point already pending. Quitting the optimizer...")
-				exit(0)
-			auprcs.append(float(spltLine[6]))
+			auprcs.append(float(spltLine[-1]))
 	return pointLst, auprcs
 
 def convertPoint(pt, varNames, fixedVars):
@@ -70,16 +70,16 @@ def convertPoint(pt, varNames, fixedVars):
 	newPt.append('P')
 	return newPt
 
-def shouldIContinue(pointLst, optMaxIter, nBest, delta):
-	if len(pointLst) is 0:
+def shouldIContinue(pointLst, auprcs, optMaxIter, n_best, delta):
+	if len(pointLst) < n_best + 1:
 		return
 	if len(pointLst) > optMaxIter:
 		with open("tempOpt.txt", "a") as fout:
 			fout.write("DONE")
 		exit(0)
 
-	resList = sorted(pointLst, key=lambda x: float(x[6]), reverse=False)
-	if abs(resList[0][6] - resList[n_best-1][6]) < delta:
+	resList = sorted(auprcs, reverse=False)
+	if abs(resList[0] - resList[n_best-1]) < delta:
 		print(" *** Early stopping triggered *** ", flush = True )
 		with open("tempOpt.txt", "a") as fout:
 			fout.write("DONE")
@@ -98,13 +98,14 @@ def optimize(cfgFilename):
 	optMaxIter = int(params["maxOptIter"])
 
 	pointLst = []
+	auprcs = []
 
 	if os.path.isfile("tempOpt.txt"):
 		pointLst, auprcs = importFromFile(BO_params["VariableNames"], BO_params["FixedVars"])
 		for i in range(0, len(auprcs)):
 			opt.tell(pointLst[i], auprcs[i])
 
-	shouldIContinue(pointLst, optMaxIter, int(params["EarlyStoppingNBest"]), float(params["EarlyStoppingDelta"]))
+	shouldIContinue(pointLst, auprcs, optMaxIter, int(params["EarlyStoppingNBest"]), float(params["EarlyStoppingDelta"]))
 
 	pt = opt.ask()
 	pt = convertPoint(pt, BO_params["VariableNames"], BO_params["FixedVars"])
