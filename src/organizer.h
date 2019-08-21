@@ -31,4 +31,5 @@ private:
 	void populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &negTrng, OrgStruct &out);
 
 	int							rank;
+	size_t						itemCounter = 0;
 };

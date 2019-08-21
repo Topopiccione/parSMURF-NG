@@ -21,6 +21,8 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 			OrgStruct tempOrg;
 			tempOrg.posTest = cache->foldManager.posIdx[i];
 			tempOrg.negTest = cache->foldManager.negIdx[i];
+			itemCounter += cache->foldManager.posIdx[i].size();
+			itemCounter += cache->foldManager.negIdx[i].size();
 			// The training set is composed by all samples not belonging to the i-th fold
 			// Again, for consistency, shuffling is done only on rank 0.
 			for (uint8_t j = 0; j < cache->foldManager.nFolds; j++) {
@@ -28,7 +30,10 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 					continue;
 				std::for_each(cache->foldManager.posIdx[j].begin(), cache->foldManager.posIdx[j].end(), [&](size_t val) {tempOrg.posTrng.push_back(val);});
 				std::for_each(cache->foldManager.negIdx[j].begin(), cache->foldManager.negIdx[j].end(), [&](size_t val) {tempOrg.negTrng.push_back(val);});
+				itemCounter += cache->foldManager.posIdx[j].size();
+				itemCounter += cache->foldManager.negIdx[j].size();
 			}
+
 
 			if (rank == 0)
 				std::random_shuffle(tempOrg.negTrng.begin(), tempOrg.negTrng.end());
@@ -72,6 +77,9 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 
 		org.push_back(tempOrg);
 	}
+
+	if (rank == 0)
+		LOG(TRACE) << "Stored " << itemCounter << " elements in Organizer for " << itemCounter * sizeof(itemCounter) << " bytes" << std::endl;
 }
 
 void Organizer::populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &negTrng, OrgStruct &out) {
@@ -82,6 +90,8 @@ void Organizer::populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &ne
 	out.negTest = std::vector<size_t>(negProp);
 	out.posTrng = std::vector<size_t>(posTrng.size() - posProp);
 	out.negTrng = std::vector<size_t>(negTrng.size() - negProp);
+
+	itemCounter += (posTrng.size() + negTrng.size());
 
 	// Shuffle the positives, too!
 	std::vector<size_t> tempPos = posTrng;
