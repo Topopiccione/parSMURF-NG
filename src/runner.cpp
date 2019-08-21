@@ -226,7 +226,6 @@ size_t Runner::runOptimizer() {
 	// 3 select the next grid combination, or interrogate the BO, and repeat
 	// 4 at the end of this loop, select the hyper-parameter combination that on average scored best
 	// 5 do a Runner::go() with this combination for testing the combination on every test set
-
 	Optimizer opt(rank, worldSize, cache, commonParams, gridParams, organ);
 	opt.runOpt();
 	return opt.bestModelIdx;

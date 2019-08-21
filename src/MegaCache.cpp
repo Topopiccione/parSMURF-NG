@@ -30,11 +30,11 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 		cacheMode = FULLCACHEMODE;
 		LOG(INFO) << TXT_BIYLW << "Enabling full cache mode." << TXT_NORML;
 		data = std::vector<double>(n * (m + 1));
-		dataIdx = std::vector<size_t>(n);
-		dataIdxInv = std::vector<size_t>(n);
-		size_t tIdx = 0;
-		std::for_each(dataIdx.begin(), dataIdx.end(), [tIdx](size_t &val) mutable {val = tIdx++;});
-		std::for_each(dataIdxInv.begin(), dataIdxInv.end(), [tIdx](size_t &val) mutable {val = tIdx++;});
+		// dataIdx = std::vector<size_t>(n);
+		// dataIdxInv = std::vector<size_t>(n);
+		// size_t tIdx = 0;
+		// std::for_each(dataIdx.begin(), dataIdx.end(), [tIdx](size_t &val) mutable {val = tIdx++;});
+		// std::for_each(dataIdxInv.begin(), dataIdxInv.end(), [tIdx](size_t &val) mutable {val = tIdx++;});
 	} else {
 		cacheMode = PARTCACHEMODE;
 		LOG(INFO) << TXT_BIYLW << "Enabling partial cache mode." << TXT_NORML;
@@ -43,10 +43,10 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 		data = std::vector<double>(tempNumElem * m);
 		dataIdx = std::vector<size_t>(tempNumElem);
 		dataIdxInv = std::vector<size_t>(tempNumElem);
+		// This is going to be moved to an external file, if it becomes too expensive to be kept in ram.
+		// Eventually, we should think about compressing data.
+		dataFileIdx = std::vector<size_t>(n);
 	}
-	// This is going to be moved to an external file, if it becomes too expensive to be kept in ram.
-	// Eventually, we should think about compressing data.
-	dataFileIdx = std::vector<size_t>(n);
 
 	preloadAndPrepareData();
 
