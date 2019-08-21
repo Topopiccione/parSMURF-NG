@@ -79,7 +79,7 @@ Organizer::Organizer(int rank, MegaCache * const cache, CommonParams commonParam
 	}
 
 	if (rank == 0)
-		LOG(TRACE) << "Stored " << itemCounter << " elements in Organizer for " << itemCounter * sizeof(itemCounter) << " bytes" << std::endl;
+		LOG(TRACE) << TXT_BIGRN << "Stored " << itemCounter << " elements in Organizer for " << itemCounter * sizeof(itemCounter) << " bytes" << TXT_NORML;
 }
 
 void Organizer::populateHO(std::vector<size_t> &posTrng, std::vector<size_t> &negTrng, OrgStruct &out) {
