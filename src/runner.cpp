@@ -9,9 +9,10 @@ Runner::Runner(int rank, int worldSize, MegaCache * const cache, Organizer &orga
 
 void Runner::go() {
 	size_t bestParamsIdx;
-	if (commonParams.woptimiz != OPT_NO)
+	if (commonParams.woptimiz != OPT_NO) {
 		bestParamsIdx = runOptimizer();
-	else {
+		MPI_Barrier(MPI_COMM_WORLD);
+	} else {
 		bestParamsIdx = 0;
 	}
 

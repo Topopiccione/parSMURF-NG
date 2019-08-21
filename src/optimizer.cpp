@@ -110,7 +110,7 @@ void Optimizer::runOpt() {
 		currentParams.auroc = std::accumulate(aurocsPerFold.begin(), aurocsPerFold.end(), 0.0) / (double)aurocsPerFold.size();
 		currentParams.auprc = std::accumulate(auprcsPerFold.begin(), auprcsPerFold.end(), 0.0) / (double)auprcsPerFold.size();
 		if (rank == 0) {
-			LOG(INFO) << TXT_BICYA << "OPT: Current parameters: idx = " << bestModelIdx <<
+			LOG(INFO) << TXT_BICYA << "OPT: Current parameters: " <<
 				" - nParts: " << currentParams.nParts <<
 				" - fp: " << currentParams.fp <<
 				" - ratio: " << currentParams.ratio <<
@@ -160,7 +160,16 @@ GridParams Optimizer::getNextParams(bool &endReached) {
 		} else
 			return gridParams[paramsIdx++];
 	} else {
-		return helpMeObiOneKenobiYouAreMyOnlyHope(endReached);
+		GridParams toBeReturned = {0,0,0,0,0,0,0,0};
+		if (rank == 0)
+			toBeReturned = helpMeObiOneKenobiYouAreMyOnlyHope(endReached);
+		MPI_Bcast(&endReached, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);		// This is ugly
+		MPI_Bcast(&toBeReturned, sizeof(toBeReturned), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+		LOG(TRACE) << "Rank " << rank <<
+			" - nParts: " << toBeReturned.nParts << " - fp: " << toBeReturned.fp <<	" - ratio: " << toBeReturned.ratio <<
+			" - k: " << toBeReturned.k << " - numTrees: " << toBeReturned.nTrees <<	" - mtry: " << toBeReturned.mtry;
+		return toBeReturned;
 	}
 }
 
