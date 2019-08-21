@@ -38,7 +38,7 @@ private:
 	int							rank;
 	int							worldSize;
 	MegaCache * const			cache;
-	Organizer 					organ;
+	Organizer 					&organ;
 	CommonParams 				commonParams;
 	std::vector<GridParams> 	gridParams;
 

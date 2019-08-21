@@ -28,7 +28,7 @@ public:
 	template <typename T>
 		double traps_integrate( const std::vector<T> & x, const std::vector<T> & y );
 private:
-	const std::vector<uint8_t>	labls;
+	const std::vector<uint8_t>	&labls;
 	const double * const 		preds;
 
 	std::vector<float>			alphas;

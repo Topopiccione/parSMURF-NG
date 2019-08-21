@@ -42,8 +42,8 @@ private:
 	int							worldSize;
 	MegaCache * const			cache;
 	CommonParams				commonParams;
-	std::vector<GridParams>		gridParams;
+	std::vector<GridParams>		&gridParams;
 	std::vector<GridParams>		internalGridParams;
-	Organizer					organ;
+	Organizer					&organ;
 	size_t						paramsIdx = 0;
 };
