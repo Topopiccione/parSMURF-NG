@@ -24,7 +24,7 @@ namespace ranger {
 class DataDouble: public Data {
 public:
   DataDouble() = default;
-  DataDouble(std::vector<double> data, std::vector<std::string> variable_names, size_t num_rows, size_t num_cols) :
+  DataDouble(std::vector<double> &data, std::vector<std::string> variable_names, size_t num_rows, size_t num_cols) :
       data { std::move(data) } {
     this->variable_names = variable_names;
     this->num_rows = num_rows;
