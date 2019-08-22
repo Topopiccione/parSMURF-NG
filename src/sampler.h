@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <thread>
 #include "ANN.h"
 
 #include "parSMURFUtils.h"
@@ -17,6 +18,7 @@ public:
 private:
 	void getSample(const size_t numSamp, std::vector<double> &localData, double * const sample);
 	void setSample(const size_t numCol, std::vector<double> &localData, const double * const sample);
+	void oversampleInThread(size_t th, size_t numOfThreads, std::vector<double> &localData, ANNkd_tree * const kdTree, uint32_t local_k, double randMax);
 
 	const size_t		n;
 	const size_t		m;
