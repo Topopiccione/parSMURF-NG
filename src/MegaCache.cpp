@@ -53,6 +53,10 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	commonParams.nn = n;
 	commonParams.mm = m;
 	commonParams.nFolds = nFolds;
+	if (commonParams.minFold == -1)
+		commonParams.minFold = 0;
+	if (commonParams.maxFold == -1)
+		commonParams.maxFold = nFolds;
 
 	cacheReady = true;
 }
