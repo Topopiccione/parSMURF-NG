@@ -19,8 +19,8 @@ void Sampler::overSample(std::vector<double> &localData) {
 	ANNkd_tree*			kdTree = nullptr;
 	kdTree = new ANNkd_tree(dataPts, numOrigPos, m + 1);
 
-	Timer ttt;
-	ttt.startTime();
+	// Timer ttt;
+	// ttt.startTime();
 
 	size_t numSampleThrd = 1;
 	std::vector<std::thread> sampleThreadVect(numSampleThrd);
@@ -30,8 +30,8 @@ void Sampler::overSample(std::vector<double> &localData) {
 	for (size_t i = 0; i < numSampleThrd; i++)
 		sampleThreadVect[i].join();
 
-	ttt.endTime();
-	std::cout << "Sample time: " << ttt.duration() << std::endl;
+	// ttt.endTime();
+	// std::cout << "Sample time: " << ttt.duration() << std::endl;
 
 	delete kdTree;
 	annDeallocPts( dataPts );
