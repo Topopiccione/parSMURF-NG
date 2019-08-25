@@ -14,11 +14,12 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 
 	// Label and folds import are managed through STL I/O functions
 	// Data access is done by MPI I/O primitives
-	std::thread t1( &MegaCache::detectNumberOfFeatures, this );
-	std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
-	t1.join();
-	t2.join();
-
+	// std::thread t1( &MegaCache::detectNumberOfFeatures, this );
+	// std::thread t2( &MegaCache::loadLabels, this, std::ref(labels), &n, &nPos );
+	// t1.join();
+	// t2.join();
+	detectNumberOfFeatures();
+	loadLabels(labels, &n, &nPos);
 	generateFolds();
 
 	if (!foldFilename.empty() & (nFromFoldGen != n))
