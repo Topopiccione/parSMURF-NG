@@ -135,7 +135,7 @@ inline void checkPtr( T * pointer, const char * file, int line ) {
 }
 
 template <typename T>
-inline void printVect( std::vector<T> vv ) {
+inline void printV( const std::vector<T> &vv ) {
 	std::for_each(vv.begin(), vv.end(), [&](T val) {std::cout << val << " "; });
 	std::cout << std::endl;
 }
