@@ -28,8 +28,6 @@ void Runner::go() {
 	std::vector<uint32_t> subMasterProcs(commonParams.nFolds);		// Only for PARALLELFOLDS_FULL
 	std::vector<uint32_t> foldAssignedToRank;						// Only for PARALLELFOLDS_SPLITTED
 	subCommCreate(startingFold, endingFold, subRank, worldSubsize, subComm, subMasterProcs, foldAssignedToRank, parallFoldMode);
-	// MPI_Finalize();
-	// exit(0);
 
 	// Allocate the predictions vectors
 	if ((parallFoldMode == PARALLELFOLDS_SPLITTED) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)))
@@ -188,7 +186,7 @@ void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, M
 			if (partsForThisRank.size() > 0) {
 				currentPart = partsForThisRank.back();
 				partsForThisRank.pop_back();
-				LOG(TRACE) << "Rank " << realRank << " (subRank: " << rank << " ) thread " << thrNum << " - popped " << currentPart;
+				LOG(TRACE) << "Rank " << realRank << " (subRank: " << rank << ") thread " << thrNum << " - popped " << currentPart;
 			} else {
 				p_partVectLock->unlock();
 				break;
@@ -207,7 +205,6 @@ void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, M
 			size_t negIdx = currentPart * negInEachPartition;
 			std::for_each(organ.org[currentFold].negTrng.begin() + negIdx, organ.org[currentFold].negTrng.begin() + negIdx + totLocalNeg,
 				[&](size_t val) {localTrngNeg.push_back(val);});
-			// std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 
 		// Good news, we can build an instance of hyperSMURFcore and start the computation
