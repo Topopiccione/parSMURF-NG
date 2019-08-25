@@ -78,6 +78,12 @@ enum woptimizer {
 	OPT_AUTOGP_HO	= 128
 };
 
+// Fold parallelization modes
+enum parallelFoldModes {
+	PARALLELFOLDS_SPLITTED = 0,
+	PARALLELFOLDS_FULL = 1
+};
+
 struct GridParams {
 	uint32_t nParts;
 	uint32_t fp;

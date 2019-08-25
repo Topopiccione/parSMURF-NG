@@ -18,26 +18,26 @@ void Runner::go() {
 
 	// Set the number of folds according to what has been specified in the options
 	uint8_t startingFold, endingFold;
-	{
-		startingFold = 0;
-		endingFold = commonParams.nFolds;
-		if (commonParams.minFold != -1)
-			startingFold = commonParams.minFold;
-		if (commonParams.maxFold != -1)
-			endingFold = commonParams.maxFold;
-		if ((commonParams.wmode == MODE_TRAIN) | (commonParams.wmode == MODE_PREDICT)){
-			LOG(INFO) << TXT_BIYLW << "rank " << rank << ": ignoring fold specifications in TRAIN and PREDICT modes" << TXT_NORML;
-			startingFold = 0;
-			endingFold = 1;
-		}
-	}
+	updateStartEndFold(startingFold, endingFold);
 
-	// Allocate the predictions vector
-	if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))
+	// Creating the communicators
+	int subRank = rank;
+	int worldSubsize = worldSize;
+	MPI_Comm subComm;
+	uint32_t parallFoldMode;
+	std::vector<uint32_t> subMasterProcs(commonParams.nFolds);		// Only for PARALLELFOLDS_FULL
+	std::vector<uint32_t> foldAssignedToRank;						// Only for PARALLELFOLDS_SPLITTED
+	subCommCreate(startingFold, endingFold, subRank, worldSubsize, subComm, subMasterProcs, foldAssignedToRank, parallFoldMode);
+	// MPI_Finalize();
+	// exit(0);
+
+	// Allocate the predictions vectors
+	if ((parallFoldMode == PARALLELFOLDS_SPLITTED) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)))
 		preds = std::vector<double>(commonParams.nn, 0);
+	std::vector<double> localPreds;
 
 	for (uint8_t currentFold = startingFold; currentFold < endingFold; currentFold++) {
-		LOG(INFO) << TXT_BIBLU << "rank: " << rank << " starting fold " << (uint32_t) currentFold << TXT_NORML;
+		LOG(INFO) << TXT_BIBLU << "rank: " << rank << " (subRank: " << subRank << ") starting fold " << (uint32_t) currentFold << TXT_NORML;
 
 		// Division between train and test sets have been already performed in the Organizer.
 		// PosTrng set is used in every partition, while NegTrng must be subdivided.
@@ -47,12 +47,12 @@ void Runner::go() {
 		{
 			// Evaluate the number of partitions assigned to this rank
 			// This formula evenly distributes the partitions among ranks
-			size_t partsAssigned = gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > rank);
+			size_t partsAssigned = gridParams[bestParamsIdx].nParts / worldSubsize + ((gridParams[bestParamsIdx].nParts % worldSubsize) > subRank);
 			// Evaluate the idx of the first partition of this rank
 			size_t tempIdx = 0;
-			for (size_t i = 0; i < rank; i++)
-				tempIdx += gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > i);
-			size_t nextIdx = tempIdx + gridParams[bestParamsIdx].nParts / worldSize + ((gridParams[bestParamsIdx].nParts % worldSize) > rank);
+			for (size_t i = 0; i < subRank; i++)
+				tempIdx += gridParams[bestParamsIdx].nParts / worldSubsize + ((gridParams[bestParamsIdx].nParts % worldSubsize) > i);
+			size_t nextIdx = tempIdx + gridParams[bestParamsIdx].nParts / worldSubsize + ((gridParams[bestParamsIdx].nParts % worldSubsize) > subRank);
 			for (size_t i = tempIdx; i < nextIdx; i++)
 				partsForThisRank.push_back(i);
 		}
@@ -61,50 +61,112 @@ void Runner::go() {
 		// localPreds contains the prediction of the test set of the current folder, locally on each rank.
 		std::mutex p_accumulLock;
 		std::mutex p_partVectLock;
-		std::vector<double> localPreds(organ.org[currentFold].posTest.size() + organ.org[currentFold].negTest.size(), 0);
+		localPreds = std::vector<double>(organ.org[currentFold].posTest.size() + organ.org[currentFold].negTest.size(), 0);
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") starting threads" << TXT_NORML;
 		{
 			std::vector<std::thread> threadVect;
 			for (size_t i = 0; i < commonParams.nThr; i++) {
-				threadVect.push_back(std::thread(&Runner::partProcess, this, rank, worldSize, i, cache, std::ref(organ),
+				threadVect.push_back(std::thread(&Runner::partProcess, this, rank, subRank, worldSubsize, i, cache, std::ref(organ),
 					std::ref(commonParams), gridParams[bestParamsIdx], std::ref(partsForThisRank), currentFold,
 					&p_accumulLock, &p_partVectLock, std::ref(localPreds)));
 			}
 			for (size_t i = 0; i < commonParams.nThr; i++)
 				threadVect[i].join();
 		}
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") threads have joined" << TXT_NORML;
 
-		// Finally, we must gather on rank 0 all the localPred vectors and accumulate them in the output vector
-		if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)) {
+		// cumulate the localPredictions if more than rank is contributing to the current fold
+		if ((parallFoldMode == PARALLELFOLDS_FULL) & (worldSubsize > 1) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
 			size_t testSize = organ.org[currentFold].posTest.size() + organ.org[currentFold].negTest.size();
 			std::vector<double> gatherVect;
-			if (rank == 0) {
-				gatherVect = std::vector<double>(testSize * worldSize, 0);
+			if (subRank == 0) {
+				gatherVect = std::vector<double>(testSize * worldSubsize, 0);
 			}
-			MPI_Gather( localPreds.data(), testSize, MPI_DOUBLE, gatherVect.data(), testSize, MPI_DOUBLE, 0, MPI_COMM_WORLD );
-			MPI_Barrier( MPI_COMM_WORLD );
+			MPI_Gather(localPreds.data(), testSize, MPI_DOUBLE, gatherVect.data(), testSize, MPI_DOUBLE, 0, subComm);
+			MPI_Barrier(subComm);
+			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") gathered on localPreds" << TXT_NORML;
 			// Accumulate in the first part of the vector
-			if (rank == 0) {
+			if (subRank == 0) {
 				for (size_t i = 0; i < testSize; i++) {
-					for (size_t j = 1; j < (size_t)worldSize; j++) {
+					for (size_t j = 1; j < (size_t)worldSubsize; j++) {
 						gatherVect[i] += gatherVect[i + j * testSize];
 					}
 				}
-				// And copy the results to the output vector
-				size_t cc = 0;
-				for (size_t i = 0; i < organ.org[currentFold].posTest.size(); i++)
-					preds[organ.org[currentFold].posTest[i]] = gatherVect[cc++];
-				for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
-					preds[organ.org[currentFold].negTest[i]] = gatherVect[cc++];
+				std::memcpy(localPreds.data(), gatherVect.data(), testSize * sizeof(double));
 			}
 		}
 
-		// Last thing, evaulate and print the partial AUROC and AUPRC for this fold
-		if ((rank == 0) & (commonParams.wmode == MODE_CV)) {
+		// Evaulate and print the partial AUROC and AUPRC for this fold
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") evaluating fold auprc" << TXT_NORML;
+		if ((subRank == 0) & (commonParams.wmode == MODE_CV)) {
 			double auroc, auprc;
-			evaluatePartialCurves(preds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
+			evaluatePartialCurves(localPreds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
 			LOG(INFO) << TXT_BICYA << "Fold " << (uint32_t) currentFold << ": auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
 		}
-		MPI_Barrier( MPI_COMM_WORLD );
+
+		// If we have less ranks than folds, copy localPreds into the local preds vector
+		if ((parallFoldMode == PARALLELFOLDS_SPLITTED) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
+			size_t cc = 0;
+			for (size_t i = 0; i < organ.org[currentFold].posTest.size(); i++)
+				preds[organ.org[currentFold].posTest[i]] = localPreds[cc++];
+			for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
+				preds[organ.org[currentFold].negTest[i]] = localPreds[cc++];
+		}
+
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") arrived at barrier" << TXT_NORML;
+		MPI_Barrier( subComm );
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	// Collect the localPreds from each submaster and move all the predictions to rank 0 in full parallel mode
+	if ((parallFoldMode == PARALLELFOLDS_FULL) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather" << TXT_NORML;
+		size_t tempSize;
+		for (uint8_t currentFold = commonParams.minFold; currentFold < commonParams.maxFold; currentFold++) {
+			uint8_t idxFold = currentFold - commonParams.minFold;
+			if (rank == subMasterProcs[idxFold]) {
+				tempSize = localPreds.size();
+				MPI_Send(&tempSize, 1, MPI_SIZE_T_, 0, 0, MPI_COMM_WORLD);
+			}
+			if (rank == 0) {
+				MPI_Recv(&tempSize, 1, MPI_SIZE_T_, subMasterProcs[idxFold], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+			std::vector<double> predsFromSubRanks;
+			if (rank == subMasterProcs[idxFold]) {
+				predsFromSubRanks = std::vector<double>(tempSize);
+				std::memcpy(predsFromSubRanks.data(), localPreds.data(), localPreds.size() * sizeof(double));
+				MPI_Send(predsFromSubRanks.data(), predsFromSubRanks.size(), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			}
+			if (rank == 0) {
+				predsFromSubRanks = std::vector<double>(tempSize);
+				MPI_Recv(predsFromSubRanks.data(), predsFromSubRanks.size(), MPI_DOUBLE, subMasterProcs[idxFold], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				// And copy the results to the output vector
+				size_t cc = 0;
+				for (size_t i = 0; i < organ.org[currentFold].posTest.size(); i++)
+					preds[organ.org[currentFold].posTest[i]] = predsFromSubRanks[cc++];
+				for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
+					preds[organ.org[currentFold].negTest[i]] = predsFromSubRanks[cc++];
+			}
+			MPI_Barrier( MPI_COMM_WORLD );
+		}
+		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather completed" << TXT_NORML;
+	}
+
+	// Collect the predictions from each rank to rank 0 in splitted parallel mode
+	if ((parallFoldMode == PARALLELFOLDS_SPLITTED) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
+		for (uint32_t senderProc = 1; senderProc < worldSize; senderProc++) {
+			if (rank == senderProc) {
+				LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") sending predictions" << TXT_NORML;
+				MPI_Send(preds.data(), preds.size(), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			}
+			if (rank == 0) {
+				std::vector<double> predsFromSubRanks(commonParams.nn, 0);
+				MPI_Recv(predsFromSubRanks.data(), predsFromSubRanks.size(), MPI_DOUBLE, senderProc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				for (size_t i = 0; i < preds.size(); i++)
+					preds[i] += predsFromSubRanks[i];
+			}
+		}
 	}
 
 	// Evaluate curves on the entire set
@@ -115,7 +177,7 @@ void Runner::go() {
 	}
 }
 
-void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
+void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
 		CommonParams &commonParams, GridParams gridParams, std::vector<size_t> &partsForThisRank,
 		uint8_t currentFold, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &localPreds) {
 	// We are inside a thread that processes a partition. We iterate until partsForThisRank is empty.
@@ -126,7 +188,7 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 			if (partsForThisRank.size() > 0) {
 				currentPart = partsForThisRank.back();
 				partsForThisRank.pop_back();
-				LOG(TRACE) << "Rank " << rank << " thread " << thrNum << " - popped " << currentPart;
+				LOG(TRACE) << "Rank " << realRank << " (subRank: " << rank << " ) thread " << thrNum << " - popped " << currentPart;
 			} else {
 				p_partVectLock->unlock();
 				break;
@@ -172,6 +234,68 @@ void Runner::partProcess(int rank, int worldSize, size_t thrNum, MegaCache * con
 	}
 }
 
+void Runner::updateStartEndFold(uint8_t &startingFold, uint8_t &endingFold) {
+	startingFold = 0;
+	endingFold = commonParams.nFolds;
+	if (commonParams.minFold != -1)
+		startingFold = commonParams.minFold;
+	if (commonParams.maxFold != -1)
+		endingFold = commonParams.maxFold;
+	if ((commonParams.wmode == MODE_TRAIN) | (commonParams.wmode == MODE_PREDICT)){
+		LOG(INFO) << TXT_BIYLW << "rank " << rank << ": ignoring fold specifications in TRAIN and PREDICT modes" << TXT_NORML;
+		startingFold = 0;
+		endingFold = 1;
+	}
+}
+
+void Runner::subCommCreate(uint8_t &startingFold, uint8_t &endingFold, int &subRank, int &worldSubsize, MPI_Comm &subComm,
+		std::vector<uint32_t> &subMasterProcs, std::vector<uint32_t> &foldAssignedToRank, uint32_t &parallFoldMode) {
+	int foldSpan = endingFold - startingFold;
+	int ws = worldSize;
+	int idx = 0;
+	if (worldSize >= foldSpan) {
+		int color;
+		std::vector<int> ppf(foldSpan);
+		std::vector<uint32_t> cumul(foldSpan + 1);
+		cumul[0] = 0;
+		std::for_each(ppf.begin(), ppf.end(), [idx, ws, foldSpan](int &val) mutable {val = ws / foldSpan + ((ws % foldSpan) > idx++);});
+		std::partial_sum(ppf.begin(), ppf.end(), cumul.begin() + 1);
+		for (int i = 0; i < cumul.size(); i++) {
+			if (rank < cumul[i]) {
+				color = i - 1;
+				break;
+			}
+		}
+		MPI_Comm_split(MPI_COMM_WORLD, color, rank, &subComm);
+		MPI_Comm_rank(subComm, &subRank);
+		MPI_Comm_size(subComm, &worldSubsize);
+		LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << " become rank " << subRank << ". worldSubsize: " << worldSubsize << " - color: " << color << TXT_NORML;
+		// Update start and ending fold
+		endingFold = startingFold + (color + 1);
+		startingFold += color;
+		std::memcpy(subMasterProcs.data(), cumul.data(), commonParams.nFolds * sizeof(uint32_t));
+		parallFoldMode = PARALLELFOLDS_FULL;
+	} else {
+		MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &subComm);
+		MPI_Comm_rank(subComm, &subRank);
+		MPI_Comm_size(subComm, &worldSubsize);
+		//LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << " become rank " << subRank << ". worldSubsize: " << worldSubsize << TXT_NORML;
+		std::vector<int> fpp(ws);
+		std::vector<uint32_t> cumul(ws + 1);
+		std::for_each(fpp.begin(), fpp.end(), [idx, ws, foldSpan](int &val) mutable {val = foldSpan / ws + ((foldSpan % ws) > idx++);});
+		std::partial_sum(fpp.begin(), fpp.end(), cumul.begin() + 1);
+		endingFold = startingFold + cumul[rank + 1];
+		startingFold += cumul[rank];
+		LOG(TRACE) << TXT_BIYLW << "Rank: " << rank << " (subrank " << subRank << ") assigned to fold: " << (uint32_t) startingFold << " - " << (uint32_t) endingFold << TXT_NORML;
+		parallFoldMode = PARALLELFOLDS_SPLITTED;
+		std::for_each(fpp.begin(), fpp.end(), [&foldAssignedToRank, idx](uint32_t val) mutable {
+			for (uint32_t aa = 0; aa < val; aa++)
+				foldAssignedToRank.push_back(idx);
+			idx++;
+		});
+	}
+}
+
 void Runner::savePredictions() {
 	if (rank == 0) {
 		std::ofstream outFile( commonParams.outFilename.c_str(), std::ios::out );
@@ -192,16 +316,17 @@ void Runner::savePredictions() {
 
 void Runner::evaluatePartialCurves(const std::vector<double> &preds, const std::vector<size_t> &posTest,
 		const std::vector<size_t> &negTest, double * const auroc, double * const auprc) {
-	std::vector<double> tempPreds(posTest.size() + negTest.size());
+	// std::vector<double> tempPreds(posTest.size() + negTest.size());
 	std::vector<uint8_t> tempLabs(posTest.size() + negTest.size());
 	// Copy predicitions in the temporary vector
 	size_t idx = 0;
-	std::for_each(posTest.begin(), posTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
-	std::for_each(negTest.begin(), negTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
+	// std::for_each(posTest.begin(), posTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
+	// std::for_each(negTest.begin(), negTest.end(), [&tempPreds, preds, &idx](size_t val){tempPreds[idx++] = preds[val];});
 	std::fill(tempLabs.begin(), tempLabs.begin() + posTest.size(), 1);
 	std::fill(tempLabs.begin() + posTest.size(), tempLabs.end(), 0);
 
-	Curves ccc(tempLabs, tempPreds.data());
+	// Curves ccc(tempLabs, tempPreds.data());
+	Curves ccc(tempLabs, preds.data());
 	// BUG: Do not invert evalAUROC_ok() and evalAUPRC()...
 	*auroc = ccc.evalAUROC_ok();
 	*auprc = ccc.evalAUPRC();

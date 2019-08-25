@@ -27,13 +27,16 @@ public:
 	std::vector<double> 		preds;
 
 private:
-	void partProcess(int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
+	void partProcess(int realRank, int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,
 			CommonParams &commonParams, GridParams gridParams, std::vector<size_t> &partsForThisRank,
 			uint8_t currentFold, std::mutex * p_accumulLock, std::mutex * p_partVectLock, std::vector<double> &preds);
 	void evaluatePartialCurves(const std::vector<double> &preds, const std::vector<size_t> &posTest,
 			const std::vector<size_t> &negTest, double * const auroc, double * const auprc);
 	void evaluateFinalCurves(const std::vector<double> &preds, double * const auroc, double * const auprc);
 	size_t runOptimizer();
+	void updateStartEndFold(uint8_t &startingFolder, uint8_t &endingFolder);
+	void subCommCreate(uint8_t &startingFold, uint8_t &endingFold, int &subRank, int &worldSubsize, MPI_Comm &subComm,
+		 	std::vector<uint32_t> &subMasterProcs, std::vector<uint32_t> &foldAssignedToRank, uint32_t &parallFoldMode);
 
 	int							rank;
 	int							worldSize;
