@@ -7,7 +7,7 @@ ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams
 		gridParams( gridParams ),
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), forestDirname( "" ), timeFilename( "" ), extConfigFilename( "" ),
 		seed( 0 ), verboseLevel(0),
-		ensThreads( 0 ), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ), strCacheSize( "" ),
+		ensThreads( 0 ), oversmpThreads(0), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ), strCacheSize( "" ),
 		generateRandomFold( false ), readNFromFile( false ), verboseMPI( false ),
 		externalConfig( false ), printCurrentConfig( false ),
 		hoProportion( 0.0f ), minFold( -1 ), maxFold( -1 ),
@@ -112,6 +112,7 @@ void ArgHandle::jsonImport( std::string cfgFilename ) {
 	seed 				= getFromJson<uint32_t>( &exec, "seed", seed );
 	verboseLevel		= getFromJson<uint32_t>( &exec, "verboseLevel", verboseLevel );
 	ensThreads			= getFromJson<uint32_t>( &exec, "ensThrd", ensThreads );
+	oversmpThreads		= getFromJson<uint32_t>( &exec, "oversmpThrd", oversmpThreads );
 	rfThreads			= getFromJson<uint32_t>( &exec, "rfThrd", rfThreads );
 	strCacheSize		= getFromJson<std::string>( &exec, "cacheSize", strCacheSize );
 	hoProportion		= getFromJson<float>( &exec, "holdOutProp", hoProportion );
@@ -236,6 +237,12 @@ void ArgHandle::checkCommonConfig( int rank ) {
 		ensThreads = 1;
 	}
 
+	if (oversmpThreads <= 0) {
+		if (rank == 0)
+			std::cout << TXT_BIYLW << "No oversampling threads specified. Setting to single thread oversampling ('exec':'oversmpThrd')." << TXT_NORML << std::endl;
+		oversmpThreads = 1;
+	}
+
 	if (rfThreads <= 0) {
 		if (rank == 0)
 			std::cout << TXT_BIYLW << "No rf threads specified. Leaving choice to Ranger ('exec':'rfThrd')." << TXT_NORML << std::endl;
@@ -358,6 +365,7 @@ CommonParams ArgHandle::fillCommonParams() {
 	commonParams.timeFilename			= timeFilename;
 	commonParams.forestDirname			= forestDirname;
 	commonParams.nThr 					= ensThreads;
+	commonParams.ovrsmpThr				= oversmpThreads;
 	commonParams.rfThr					= rfThreads;
 	commonParams.wmode					= wmode;
 	commonParams.woptimiz				= woptimiz;

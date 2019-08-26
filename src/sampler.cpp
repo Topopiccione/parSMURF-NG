@@ -2,8 +2,8 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "sampler.h"
 
-Sampler::Sampler(size_t n, size_t m, size_t tot, size_t numOrigPos, uint32_t k, uint32_t fp) :
-		n{n}, m{m}, tot{tot}, numOrigPos{numOrigPos}, k{k}, fp{fp} {
+Sampler::Sampler(size_t n, size_t m, size_t tot, size_t numOrigPos, uint32_t k, uint32_t fp, uint32_t oversamplingThreads) :
+		n{n}, m{m}, tot{tot}, numOrigPos{numOrigPos}, k{k}, fp{fp}, ovrsmpThr{oversamplingThreads} {
 }
 
 void Sampler::overSample(std::vector<double> &localData) {
@@ -22,12 +22,12 @@ void Sampler::overSample(std::vector<double> &localData) {
 	// Timer ttt;
 	// ttt.startTime();
 
-	size_t numSampleThrd = 1;
-	std::vector<std::thread> sampleThreadVect(numSampleThrd);
-	for (size_t i = 0; i < numSampleThrd; i++) {
-		sampleThreadVect[i] = std::thread(&Sampler::oversampleInThread, this, i, numSampleThrd, std::ref(localData), kdTree, localk, randMax);
+	//size_t numSampleThrd = 1;
+	std::vector<std::thread> sampleThreadVect(ovrsmpThr);
+	for (uint32_t i = 0; i < ovrsmpThr; i++) {
+		sampleThreadVect[i] = std::thread(&Sampler::oversampleInThread, this, i, ovrsmpThr, std::ref(localData), kdTree, localk, randMax);
 	}
-	for (size_t i = 0; i < numSampleThrd; i++)
+	for (uint32_t i = 0; i < ovrsmpThr; i++)
 		sampleThreadVect[i].join();
 
 	// ttt.endTime();
@@ -50,7 +50,7 @@ void Sampler::setSample(const size_t numCol, std::vector<double> &localData, con
 		localData[numCol + tot * i] = sample[i];
 }
 
-void Sampler::oversampleInThread(size_t th, size_t numOfThreads, std::vector<double> &localData, ANNkd_tree * const kdTree, uint32_t localk, double randMax) {
+void Sampler::oversampleInThread(size_t th, uint32_t numOfThreads, std::vector<double> &localData, ANNkd_tree * const kdTree, uint32_t localk, double randMax) {
 	uint32_t 				ptIndex;
 	uint32_t 				idx;
 	double					alpha;

@@ -111,6 +111,7 @@ struct CommonParams {
 	std::string	cfgFilename;
 	uint32_t	nThr;
 	uint32_t	rfThr;
+	uint32_t	ovrsmpThr;
 	uint8_t		wmode;
 	uint8_t		woptimiz;
 	size_t		cacheSize;

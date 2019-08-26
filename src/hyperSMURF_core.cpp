@@ -46,7 +46,7 @@ void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &n
 	copySamplesInLocalData(totNeg, negIdx, totPos, tot, localData);
 
 	// Oversample
-	Sampler samp(n, m, tot, posIdx.size(), k, fp);
+	Sampler samp(n, m, tot, posIdx.size(), k, fp, commonParams.ovrsmpThr);
 	samp.overSample(localData);
 
 	// Forest train

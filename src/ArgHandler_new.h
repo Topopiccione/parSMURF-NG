@@ -35,6 +35,7 @@ public:
 	uint32_t		seed;
 	uint32_t		verboseLevel;
 	uint32_t		ensThreads;
+	uint32_t		oversmpThreads;
 	uint32_t		rfThreads;
 	uint8_t			wmode;
 	uint8_t			woptimiz;
