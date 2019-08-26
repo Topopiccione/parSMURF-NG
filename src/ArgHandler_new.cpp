@@ -403,6 +403,7 @@ size_t ArgHandle::convertStrToDatasize(std::string strCacheSize) {
 	num.resize(idx);
 
 	// extract the multiplier
+	multipl = 1;
 	for (size_t i = 0; i < strLen; i++) {
 		c = (uint8_t) strCacheSize[i];
 		if ((c == 'k') | (c == 'K')) {

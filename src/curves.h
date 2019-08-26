@@ -33,8 +33,8 @@ private:
 
 	std::vector<float>			alphas;
 
-	size_t						totP;
-	size_t						totN;
+	size_t						totP = 0;
+	size_t						totN = 0;
 	std::vector<double>			precision;
 	std::vector<double>			recall;
 	std::vector<float>			recall2;

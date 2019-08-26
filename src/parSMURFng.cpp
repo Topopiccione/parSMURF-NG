@@ -44,7 +44,7 @@ int main(int argc, char ** argv){
 	std::vector<GridParams> gridParams;
 	ArgHandle commandLine( argc, argv, gridParams );
 	CommonParams commonParams = commandLine.processCommandLine( rank );
-	if (rank == 0)
+	if ((rank == 0) & commandLine.printCurrentConfig)
 		commandLine.printConfig(0,0);
 
 	// Megacache and organizer init

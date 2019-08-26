@@ -251,7 +251,7 @@ void Runner::subCommCreate(uint8_t &startingFold, uint8_t &endingFold, int &subR
 	int ws = worldSize;
 	int idx = 0;
 	if (worldSize >= foldSpan) {
-		int color;
+		int color = 0;
 		std::vector<int> ppf(foldSpan);
 		std::vector<uint32_t> cumul(foldSpan + 1);
 		cumul[0] = 0;
