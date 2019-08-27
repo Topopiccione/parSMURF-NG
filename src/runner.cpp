@@ -32,6 +32,8 @@ void Runner::go() {
 	// Allocate the predictions vectors
 	if ((parallFoldMode == PARALLELFOLDS_SPLITTED) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)))
 		preds = std::vector<double>(commonParams.nn, 0);
+	if ((parallFoldMode == PARALLELFOLDS_FULL) & (rank == 0) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)))
+		preds = std::vector<double>(commonParams.nn, 0);
 	std::vector<double> localPreds;
 
 	for (uint8_t currentFold = startingFold; currentFold < endingFold; currentFold++) {
@@ -95,8 +97,8 @@ void Runner::go() {
 		}
 
 		// Evaulate and print the partial AUROC and AUPRC for this fold
-		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") evaluating fold auprc" << TXT_NORML;
 		if ((subRank == 0) & (commonParams.wmode == MODE_CV)) {
+			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") evaluating fold auprc" << TXT_NORML;
 			double auroc, auprc;
 			evaluatePartialCurves(localPreds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
 			LOG(INFO) << TXT_BICYA << "Fold " << (uint32_t) currentFold << ": auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
@@ -118,27 +120,21 @@ void Runner::go() {
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Collect the localPreds from each submaster and move all the predictions to rank 0 in full parallel mode
+	// This could be done with a gather on rank 0, but it could be exepensive in terms of memeory consumption
 	if ((parallFoldMode == PARALLELFOLDS_FULL) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
 		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather" << TXT_NORML;
 		size_t tempSize;
-		for (uint8_t currentFold = commonParams.minFold; currentFold < commonParams.maxFold; currentFold++) {
+		for (uint8_t currentFold = commonParams.minFold + 1; currentFold < commonParams.maxFold; currentFold++) {
 			uint8_t idxFold = currentFold - commonParams.minFold;
 			if (rank == subMasterProcs[idxFold]) {
-				tempSize = localPreds.size();
-				MPI_Send(&tempSize, 1, MPI_SIZE_T_, 0, 0, MPI_COMM_WORLD);
+				LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") sending localPreds to rank 0" << TXT_NORML;
+				MPI_Send(localPreds.data(), localPreds.size(), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 			}
 			if (rank == 0) {
-				MPI_Recv(&tempSize, 1, MPI_SIZE_T_, subMasterProcs[idxFold], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			}
-			std::vector<double> predsFromSubRanks;
-			if (rank == subMasterProcs[idxFold]) {
-				predsFromSubRanks = std::vector<double>(tempSize);
-				std::memcpy(predsFromSubRanks.data(), localPreds.data(), localPreds.size() * sizeof(double));
-				MPI_Send(predsFromSubRanks.data(), predsFromSubRanks.size(), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-			}
-			if (rank == 0) {
-				predsFromSubRanks = std::vector<double>(tempSize);
+				std::vector<double>predsFromSubRanks(organ.org[currentFold].posTest.size() + organ.org[currentFold].negTest.size());
+				LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") receiving localPreds from rank " << subMasterProcs[idxFold] << TXT_NORML;
 				MPI_Recv(predsFromSubRanks.data(), predsFromSubRanks.size(), MPI_DOUBLE, subMasterProcs[idxFold], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") localPreds from rank " << subMasterProcs[idxFold] << " received" << TXT_NORML;
 				// And copy the results to the output vector
 				size_t cc = 0;
 				for (size_t i = 0; i < organ.org[currentFold].posTest.size(); i++)
@@ -146,9 +142,18 @@ void Runner::go() {
 				for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
 					preds[organ.org[currentFold].negTest[i]] = predsFromSubRanks[cc++];
 			}
+			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier..." << TXT_NORML;
 			MPI_Barrier( MPI_COMM_WORLD );
 		}
 		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather completed" << TXT_NORML;
+
+		if (rank == 0) {
+			size_t cc = 0;
+			for (size_t i = 0; i < organ.org[commonParams.minFold].posTest.size(); i++)
+				preds[organ.org[commonParams.minFold].posTest[i]] = localPreds[cc++];
+			for (size_t i = 0; i < organ.org[commonParams.minFold].negTest.size(); i++)
+				preds[organ.org[commonParams.minFold].negTest[i]] = localPreds[cc++];
+		}
 	}
 
 	// Collect the predictions from each rank to rank 0 in splitted parallel mode
@@ -164,6 +169,7 @@ void Runner::go() {
 				for (size_t i = 0; i < preds.size(); i++)
 					preds[i] += predsFromSubRanks[i];
 			}
+			MPI_Barrier( MPI_COMM_WORLD );
 		}
 	}
 
@@ -173,6 +179,8 @@ void Runner::go() {
 		evaluateFinalCurves(preds, &auroc, &auprc);
 		LOG(INFO) << TXT_BICYA << "Final scores: auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, MegaCache * const cache, Organizer &organ,

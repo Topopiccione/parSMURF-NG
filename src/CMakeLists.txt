@@ -34,7 +34,8 @@ if(debug)
 else()
 	message("____ RELEASE MODE ____")
 	# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")	# for Intel VTune
+	# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")	# for Intel VTune
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g")	# for Intel Advisor
 endif()
 
 SET(SRCCOMMON				"ArgHandler_new.cpp"
