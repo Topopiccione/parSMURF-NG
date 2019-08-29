@@ -1,6 +1,7 @@
 // parSMURFng
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "optimizer.h"
+#include "optimizer_sourcepython.h"
 
 Optimizer::Optimizer(int rank, int worldSize, MegaCache * const cache, CommonParams commonParams,
 		std::vector<GridParams> &gridParams, Organizer &organ) : rank{rank}, worldSize{worldSize}, cache{cache},
@@ -237,7 +238,8 @@ void Optimizer::evaluatePartialCurves(const std::vector<double> &preds, const st
 
 GridParams Optimizer::helpMeObiOneKenobiYouAreMyOnlyHope(bool &endReached) {
 	// Interrogate the oracle
-	std::string commandLine = std::string("python3 optimizer.py " + commonParams.cfgFilename);
+	// std::string commandLine = std::string("python3 optimizer.py " + commonParams.cfgFilename);
+	std::string commandLine = std::string("python3 -c " + optimizerPythonFileContent + " " + commonParams.cfgFilename);
 	int retVal = std::system( commandLine.c_str() );
 
 	// Open the tempOpt.txt file and get a pending point to be evaluated
