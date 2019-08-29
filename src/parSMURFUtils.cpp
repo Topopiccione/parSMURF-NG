@@ -2,7 +2,7 @@
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "parSMURFUtils.h"
 
-std::vector<std::string> generateRandomName( const int n ) {
+std::vector<std::string> generateRandomName(const int n) {
 	const char alphanum[] =
 	        "0123456789"
 	        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -26,7 +26,7 @@ std::vector<std::string> generateNames(const size_t n) {
 	return out;
 }
 
-std::vector<std::string> split_str( std::string s, std::string delimiters ) {
+std::vector<std::string> split_str(std::string s, std::string delimiters) {
 	std::vector<std::string> toBeRet;
 	size_t current;
 	size_t next = -1;
@@ -49,14 +49,6 @@ void printData(const double * const xx, const uint32_t * const yy, const size_t 
 			std::cout << yy[av++] << std::endl;
 		else if (!((i+1) % (mm + 1)) & !printLabels)
 			std::cout << std::endl;
-	}
-}
-
-// TODO: This must be optimized
-void transposeMatrix(double * const dst, const double * const src, const size_t nn, const size_t mm) {
-	for(size_t i = 0; i < mm; i++) {
-		for(size_t j = 0; j < nn; j++)
-			dst[i*nn + j] = src[j*mm + i];
 	}
 }
 

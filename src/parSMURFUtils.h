@@ -31,18 +31,6 @@
 #define TXT_NORML ""
 #endif
 
-// From: https://stackoverflow.com/questions/1562074/how-do-i-show-the-value-of-a-define-at-compile-time
-// #define VALUE_TO_STRING(x) #x
-// #define VALUE(x) VALUE_TO_STRING(x)
-// #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
-//
-// #pragma message(VAR_NAME_VALUE(SIZE_MAX))
-// #pragma message(VAR_NAME_VALUE(USHRT_MAX))
-// #pragma message(VAR_NAME_VALUE(UINT_MAX))
-// #pragma message(VAR_NAME_VALUE(ULONG_MAX))
-// #pragma message(VAR_NAME_VALUE(ULLONG_MAX))
-
-
 //// MPI define for size_t. NOT PORTABLE. ONLY WORKS ON 64-bit Linux
 // 64-bit arch
 #define MPI_SIZE_T_ MPI_UNSIGNED_LONG_LONG
@@ -52,7 +40,6 @@
 // #define MPI_SIZE_T_ MPI_UNSIGNED_SHORT
 // 8-bit arch
 // #define MPI_SIZE_T_ MPI_UNSIGNED_CHAR
-
 
 // some useful labelling...
 enum verbLvl {
@@ -99,7 +86,6 @@ struct CommonParams {
 	size_t		nn;
 	size_t		mm;
 	uint8_t		nFolds;
-	// uint32_t	nFolds;
 	uint32_t	seed;
 	uint32_t	verboseLevel;
 	std::string dataFilename;
@@ -126,15 +112,14 @@ struct CommonParams {
 };
 
 // Various utility functions
-std::vector<std::string> generateRandomName( const int n );
+std::vector<std::string> generateRandomName(const int n);
 std::vector<std::string> generateNames(const size_t n);
-std::vector<std::string> split_str( std::string s, std::string delimiters );
+std::vector<std::string> split_str(std::string s, std::string delimiters);
 void printData(const double * const xx, const uint32_t * const yy, const size_t nn, const size_t mm, const bool printLabels );
-void transposeMatrix(double * const dst, const double * const src, const size_t nn, const size_t mm);
 void checkLoggerConfFile();
 
 template <typename T>
-inline void checkPtr( T * pointer, const char * file, int line ) {
+inline void checkPtr(T * pointer, const char * file, int line) {
 	if (pointer == nullptr) {
 		std::cout << TXT_BIRED << "Invalid allocation in " << file << " at line " << line << ". GAME OVER, YEEEEEEEEEEEAH!..." << TXT_NORML << std::endl;
 		abort();
@@ -142,7 +127,7 @@ inline void checkPtr( T * pointer, const char * file, int line ) {
 }
 
 template <typename T>
-inline void printV( const std::vector<T> &vv ) {
+inline void printV(const std::vector<T> &vv) {
 	std::for_each(vv.begin(), vv.end(), [&](T val) {std::cout << val << " "; });
 	std::cout << std::endl;
 }
