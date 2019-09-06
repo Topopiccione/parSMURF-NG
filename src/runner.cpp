@@ -223,6 +223,17 @@ void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, M
 			if (commonParams.wmode == MODE_TRAIN) {
 				hsCore.saveTrainedForest(currentPart);
 			}
+			// Temporary mod for the evaluation of AUROC e AUPRC on the entire training set
+			{
+				hsCore.test(currentPart, organ.org[currentFold].posTrng, organ.org[currentFold].negTrng);
+				size_t trngSize = organ.org[currentFold].posTrng.size() + organ.org[currentFold].negTrng.size();
+				std::vector<double> trainPreds(trngSize);
+				for (size_t i = 0; i < trngSize; i++)
+					trainPreds[i] = hsCore.class1Prob[i];
+				double auroc, auprc;
+				evaluatePartialCurves(trainPreds, organ.org[currentFold].posTrng, organ.org[currentFold].negTrng, &auroc, &auprc);
+				std::cout << "On training set, current partition " << currentPart << ": AUROC = " << auroc << " - AUPRC = " << auprc << std::endl;
+			}
 
 			if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)) {
 				hsCore.test(currentPart, organ.org[currentFold].posTest, organ.org[currentFold].negTest);
