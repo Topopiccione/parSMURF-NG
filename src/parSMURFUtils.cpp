@@ -71,6 +71,8 @@ void checkLoggerConfFile() {
 		confFile << "    FORMAT               = \"%datetime{%d/%M} %func %msg\"" << std::endl;
 		confFile << "* TRACE:" << std::endl;
 		confFile << "    ENABLED              =  false" << std::endl;
+		confFile << "* INFO:" << std::endl;
+		confFile << "    ENABLED              =  true" << std::endl;
 		confFile.close();
 	} else {
 		confFile.close();
