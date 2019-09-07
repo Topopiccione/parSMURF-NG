@@ -224,6 +224,7 @@ void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, M
 				hsCore.saveTrainedForest(currentPart);
 			}
 			// Temporary mod for the evaluation of AUROC e AUPRC on the entire training set
+#ifdef TRAININGEVAL
 			{
 				hsCore.test(currentPart, organ.org[currentFold].posTrng, organ.org[currentFold].negTrng);
 				size_t trngSize = organ.org[currentFold].posTrng.size() + organ.org[currentFold].negTrng.size();
@@ -234,7 +235,7 @@ void Runner::partProcess(int realRank, int rank, int worldSize, size_t thrNum, M
 				evaluatePartialCurves(trainPreds, organ.org[currentFold].posTrng, organ.org[currentFold].negTrng, &auroc, &auprc);
 				std::cout << "On training set, current partition " << currentPart << ": AUROC = " << auroc << " - AUPRC = " << auprc << std::endl;
 			}
-
+#endif
 			if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT)) {
 				hsCore.test(currentPart, organ.org[currentFold].posTest, organ.org[currentFold].negTest);
 				// In hsCore.class1Prob there are the predictions for the samples in the posTest and negTest
