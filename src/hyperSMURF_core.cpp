@@ -95,6 +95,12 @@ void hyperSMURFcore::test(size_t currentPart, std::vector<size_t> &posIdxIn, std
 	std::for_each(predictions[0].begin(), predictions[0].end(), [&](std::vector<double> val) {class1Prob.push_back(val[0]);});
 }
 
+void hyperSMURFcore::freeTestSet() {
+	if (rfTest != nullptr)
+		delete rfTest;
+	rfTest = nullptr;
+}
+
 hyperSMURFcore::~hyperSMURFcore() {
 	if (rfTrain != nullptr)
 		delete rfTrain;

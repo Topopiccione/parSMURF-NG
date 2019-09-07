@@ -17,6 +17,8 @@
 #include "hyperSMURF_core.h"
 #include "curves.h"
 
+#define TRAININGEVAL
+
 class Runner{
 public:
 	Runner(int rank, int worldSize, MegaCache * const cache, Organizer &organ, CommonParams commonParams, std::vector<GridParams> gridParams);

@@ -23,6 +23,7 @@ public:
 	void train(std::vector<size_t> &posIdx, std::vector<size_t> &negIdx);
 	void saveTrainedForest(size_t currentPart);
 	void test(size_t currentPart, std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn);
+	void freeTestSet();
 
 	// Public vars
 	std::vector<double>				class1Prob;
