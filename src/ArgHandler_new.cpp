@@ -401,9 +401,9 @@ size_t ArgHandle::convertStrToDatasize(std::string strCacheSize) {
 	size_t idx = 0;
 	for (size_t i = 0; i < strLen; i++) {
 		c = (uint8_t) strCacheSize[i];
-		if (((c < 48) | (c > 57)) & startCharFound)
+		if ((((c < 48) & (c != 46)) | (c > 57)) & startCharFound)
 			break;
-		else if ((c >= 48) & (c <= 57)) {
+		else if (((c >= 48) & (c <= 57)) | (c == 46)) {
 			startCharFound = true;
 			num[idx++] = c;
 		}
@@ -426,7 +426,7 @@ size_t ArgHandle::convertStrToDatasize(std::string strCacheSize) {
 		}
 	}
 
-	return multipl * std::stoi(num);
+	return (size_t) multipl * std::stof(num);
 }
 
 void ArgHandle::printConfig( uint32_t n, uint32_t m ) {
