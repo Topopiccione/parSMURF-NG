@@ -17,7 +17,7 @@
 #include "hyperSMURF_core.h"
 #include "curves.h"
 
-#define TRAININGEVAL
+//#define TRAININGEVAL
 
 class Runner{
 public:
