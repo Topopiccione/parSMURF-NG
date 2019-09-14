@@ -23,8 +23,8 @@ public:
 	MegaCache(const int rank, const int worldSize, CommonParams &commonParams);
 	~MegaCache();
 
-	void getSample(size_t idx, std::vector<double> &sample);
-	void getSamples(std::vector<size_t>, std::vector<double> &samples);
+	void getSample(size_t idx, std::vector<float> &sample);
+	void getSamples(std::vector<size_t>, std::vector<float> &samples);
 	const std::vector<uint8_t> & getLabels();
 
 	int						rank;
@@ -57,7 +57,7 @@ private:
 
 	CommonParams			commonParams;
 
-	std::vector<double>		data;			// Main data array
+	std::vector<float>		data;			// Main data array
 	std::vector<uint8_t>	labels;			// Main labels array
 	std::vector<uint8_t>	folds;
 	std::vector<size_t>		dataIdx;		// list of idx for data and label arrays

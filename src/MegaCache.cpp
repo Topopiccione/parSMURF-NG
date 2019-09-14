@@ -25,12 +25,12 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	if (!foldFilename.empty() & (nFromFoldGen != n))
 		LOG(INFO) << TXT_BIRED << "WARNING: size mismatch between label and fold file!!!" << TXT_NORML;
 
-	size_t datasize = n * m * sizeof(double);
+	size_t datasize = n * m * sizeof(float);
 	LOG(INFO) << TXT_BIYLW << "Space required for complete dataset: " << datasize << " bytes. " << TXT_NORML;
 	if (datasize <= cacheSize) {
 		cacheMode = FULLCACHEMODE;
 		LOG(INFO) << TXT_BIYLW << "Enabling full cache mode." << TXT_NORML;
-		data = std::vector<double>(n * (m + 1));
+		data = std::vector<float>(n * (m + 1));
 		// dataIdx = std::vector<size_t>(n);
 		// dataIdxInv = std::vector<size_t>(n);
 		// size_t tIdx = 0;
@@ -39,9 +39,9 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	} else {
 		cacheMode = PARTCACHEMODE;
 		LOG(INFO) << TXT_BIYLW << "Enabling partial cache mode." << TXT_NORML;
-		size_t tempNumElem = cacheSize / sizeof(double);
+		size_t tempNumElem = cacheSize / sizeof(float);
 		tempNumElem /= m;
-		data = std::vector<double>(tempNumElem * m);
+		data = std::vector<float>(tempNumElem * m);
 		dataIdx = std::vector<size_t>(tempNumElem);
 		dataIdxInv = std::vector<size_t>(tempNumElem);
 		// This is going to be moved to an external file, if it becomes too expensive to be kept in ram.
@@ -196,9 +196,9 @@ void MegaCache::preloadAndPrepareData() {
 		MPI_File_close(&dataFile_Mpih);
 
 		// // Check: load with STL and compare what has been read by MPI
-		// std::vector<double> dataStd;
+		// std::vector<float> dataStd;
 		// {
-		// 	double inDouble;
+		// 	float inFloat;
 		// 	size_t con = 0;
 		// 	size_t labelCnt = 0;
 		// 	size_t labelIdx = 0;
@@ -207,8 +207,8 @@ void MegaCache::preloadAndPrepareData() {
 		// 		throw std::runtime_error( "Error opening matrix file." );
 		//
 		// 	ttt.startTime();
-		// 	while (dataFile >> inDouble) {
-		// 		dataStd.push_back( inDouble );
+		// 	while (dataFile >> inFloat) {
+		// 		dataStd.push_back( inFloat );
 		// 		labelCnt++;
 		// 		if (labelCnt == m) {
 		// 			dataStd.push_back(labels[labelIdx++] > 0 ? 1 : 2);
@@ -259,7 +259,7 @@ void MegaCache::processBuffer(uint8_t * const buf, const size_t bufSize, char * 
 }
 
 inline void MegaCache::convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported) {
-	double tempVal = strtod(tempBuf, nullptr);
+	float tempVal = strtof(tempBuf, nullptr);
 	data[*elementsImported] = tempVal;
 	(*elementsImported)++;
 	std::memset(tempBuf, '\0', *tempBufIdx);
@@ -267,10 +267,10 @@ inline void MegaCache::convertData(char * const tempBuf, size_t * const tempBufI
 }
 
 
-// sample vector must have been preallocated as std::vector<double>(m+1)
-void MegaCache::getSample(size_t idx, std::vector<double> &sample) {
+// sample vector must have been preallocated as std::vector<float>(m+1)
+void MegaCache::getSample(size_t idx, std::vector<float> &sample) {
 	if (cacheMode == FULLCACHEMODE) {
-		std::memcpy(sample.data(), data.data() + (idx * (m + 1)), (m + 1) * sizeof(double));
+		std::memcpy(sample.data(), data.data() + (idx * (m + 1)), (m + 1) * sizeof(float));
 	} else {
 		LOG(TRACE) << TXT_BIRED << "Partial cache not yet implemented..." << TXT_NORML;
 	}

@@ -110,11 +110,11 @@ hyperSMURFcore::~hyperSMURFcore() {
 
 inline
 void hyperSMURFcore::copySamplesInLocalData(const size_t howMany, const std::vector<size_t> &idx, const size_t startIdx, const size_t tot, std::vector<double> &localData) {
-	std::vector<double> tempSample(m + 1);
+	std::vector<float> tempSample(m + 1);
 	for (size_t i = 0; i < howMany; i++) {
 		cache->getSample(idx[i], tempSample);
 		for (size_t j = 0; j < tempSample.size(); j++)
-			localData[i + startIdx + j*tot] = tempSample[j];
+			localData[i + startIdx + j*tot] = static_cast<double>(tempSample[j]);
 	}
 }
 
