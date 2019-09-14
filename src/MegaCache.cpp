@@ -12,6 +12,9 @@ MegaCache::MegaCache(const int rank, const int worldSize, CommonParams &commonPa
 	foldFilename	= commonParams.foldFilename;
 	nFolds			= commonParams.nFolds;
 
+	if (dataFilename.substr(dataFilename.size() - 4, 4).compare(".bin") == 0)
+		binaryMode = true;
+
 	// Label and folds import are managed through STL I/O functions
 	// Data access is done by MPI I/O primitives
 	// std::thread t1( &MegaCache::detectNumberOfFeatures, this );
@@ -68,31 +71,49 @@ MegaCache::~MegaCache() {}
 // datafile must be in space separated headerless format.
 // Each line is a sample, each column a feature
 void MegaCache::detectNumberOfFeatures() {
-	std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
-	if (!dataFile)
-		throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
+	if (binaryMode) {
+		std::ifstream dataFile( dataFilename.c_str(), std::ios::binary );
+		if (!dataFile)
+			throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
 
-	// 1) detecting the number of columns
-	if (rank == 0)
-		LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": Detecting the number of features from data..." << TXT_NORML;
-	// Get the length of the first line
-	char c;
-	size_t con = 0;
-	while (dataFile.get(c)) {
-		con++;
-		if (c == '\n')
-			break;
+		if (rank == 0)
+			LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": Detecting the number of features from data..." << TXT_NORML;
+
+		// The number of features is stored as uint32_t in the first 4 bytes of the binary data file
+		char bytes[4];
+		uint32_t columns = 0;
+		dataFile.read(bytes, sizeof(uint32_t));
+		columns = *(reinterpret_cast<uint32_t*>(bytes));
+		LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << columns << " features detected from data file." << TXT_NORML;
+		m = columns;
+		dataFile.close();
+	} else {
+		std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
+		if (!dataFile)
+			throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
+
+		// 1) detecting the number of columns
+		if (rank == 0)
+			LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": Detecting the number of features from data..." << TXT_NORML;
+		// Get the length of the first line
+		char c;
+		size_t con = 0;
+		while (dataFile.get(c)) {
+			con++;
+			if (c == '\n')
+				break;
+		}
+		// Allocate a buffer and read the first line in its entirety
+		char * buffer = new char[con];				checkPtr<char>( buffer, __FILE__, __LINE__ );
+		dataFile.seekg (0, dataFile.beg);
+		dataFile.getline(buffer, con);
+		// split the string according to the standard delimiters of a csv or tsv file (space, tab, comma)
+		std::vector<std::string> splittedBuffer = split_str( buffer, " ,\t" );
+		LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << splittedBuffer.size() << " features detected from data file." << TXT_NORML;
+		m = splittedBuffer.size();
+		dataFile.close();
+		delete[] buffer;
 	}
-	// Allocate a buffer and read the first line in its entirety
-	char * buffer = new char[con];				checkPtr<char>( buffer, __FILE__, __LINE__ );
-	dataFile.seekg (0, dataFile.beg);
-	dataFile.getline(buffer, con);
-	// split the string according to the standard delimiters of a csv or tsv file (space, tab, comma)
-	std::vector<std::string> splittedBuffer = split_str( buffer, " ,\t" );
-	LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << splittedBuffer.size() << " features detected from data file." << TXT_NORML;
-	m = splittedBuffer.size();
-	dataFile.close();
-	delete[] buffer;
 
 	featuresDetected = true;
 }
@@ -148,6 +169,7 @@ void MegaCache::preloadAndPrepareData() {
 		size_t bufSize = 16 * worldSize * 1024;		// 16 Kb per proc buffer
 		size_t dataRead = 0;
 		size_t elementsImported = 0;
+		size_t idxInData = 0;
 		uint8_t * buf = new uint8_t[bufSize];
 		size_t labelCnt = 0;
 
@@ -172,6 +194,10 @@ void MegaCache::preloadAndPrepareData() {
 		// TODO: experiment with MPI_Info
 		MPI_File_open(MPI_COMM_SELF, dataFilename.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &dataFile_Mpih);
 		MPI_File_get_size(dataFile_Mpih, &filesize);
+		if (binaryMode) {
+			MPI_File_seek(dataFile_Mpih, 4, MPI_SEEK_SET);	// Skip the first 4 bytes when in binary mode
+			dataRead += 4;
+		}
 		MPI_File_set_view(dataFile_Mpih, offset, MPI_UNSIGNED_CHAR, vect_d, "native", MPI_INFO_NULL);
 		// MPI_File_set_view(dataFile_Mpih, 0, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 		// NON USARE // MPI_File_set_view(dataFile_Mpih, rank * bufSize / worldSize, MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
@@ -183,7 +209,10 @@ void MegaCache::preloadAndPrepareData() {
 		while (dataRead < filesize) {
 			std::memset(buf, ' ', bufSize);
 			MPI_File_read_all(dataFile_Mpih, buf, bufSize, MPI_UNSIGNED_CHAR, &fstatus);
-			processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported, &labelCnt);
+			if (binaryMode)
+				processBinaryBuffer(buf, bufSize, &elementsImported, &idxInData, &labelCnt);
+			else
+				processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported, &labelCnt);
 			dataRead += (bufSize);
 		}
 		ttt.endTime();
@@ -227,6 +256,24 @@ void MegaCache::preloadAndPrepareData() {
 		// 			LOG(TRACE) << "rank " << rank << " - mismatch at " << ii << ": " << data[ii] << " -- " << dataStd[ii];
 		// 	}
 		// }
+	}
+}
+
+void MegaCache::processBinaryBuffer(uint8_t * const buf, const size_t bufSize, size_t * const elementsImported,
+		size_t * const idxInData, size_t * const labelCnt) {
+	size_t idx = 0;
+	float f;
+	while ((idx < bufSize) & (*elementsImported < (m * n))) {
+		f = *(reinterpret_cast<float*>(buf + idx));
+		data[(*idxInData)] = f;
+		(*elementsImported)++;
+		(*idxInData)++;
+		if (((*elementsImported) % m) == 0) {
+			data[(*idxInData)] = labels[(*labelCnt)] == 1 ? 1.0 : 2.0;
+			(*labelCnt)++;
+			(*idxInData)++;
+		}
+		idx += sizeof(float);
 	}
 }
 

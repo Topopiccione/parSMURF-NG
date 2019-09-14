@@ -48,6 +48,7 @@ private:
 	// void loadFolds(std::vector<uint8_t> &dstVect, size_t * valsRead, uint8_t * nFolds);
 	void detectNumberOfFeatures();
 	void processBuffer(uint8_t * const buf, const size_t bufSize, char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported, size_t * const labelCnt);
+	void processBinaryBuffer(uint8_t * const buf, const size_t bufSize, size_t * const elementsImported, size_t * const idxInData, size_t * const labelCnt);
 	void convertData(char * const tempBuf, size_t * const tempBufIdx, size_t * const elementsImported);
 	void generateFolds();
 
@@ -69,5 +70,7 @@ private:
 	size_t					currentIdx;
 
 	MPI_File				dataFile_Mpih;
+
+	bool					binaryMode = false;
 
 };
