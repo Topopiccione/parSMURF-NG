@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.0.2)
 
 # Compile options
 option(debug "Compile in debug mode" OFF)
+option(xeonphi "Xeon Phi compiler flag enabled" OFF)
 
 # This time, MPI is a requirement of the project
 find_package(MPI)
@@ -36,6 +37,11 @@ else()
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 	# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")	# for Intel VTune
 	# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g")	# for Intel Advisor
+endif()
+
+if(xeonphi)
+	message("____ XEON PHI COMPILER FLAGS ENABLED ____")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -xMIC-AVX512")
 endif()
 
 SET(SRCCOMMON				"ArgHandler_new.cpp"
