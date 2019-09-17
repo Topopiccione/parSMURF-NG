@@ -7,8 +7,8 @@ Curves::Curves() : preds( nullptr ), labls(std::vector<uint8_t>(0)) {}
 Curves::Curves(const std::vector<uint8_t> & labels, const double * const predictions) :
 		labls(labels), preds(predictions) {
 
-	precision	= std::vector<double>(labls.size(), 0);	// Dummy init
-	recall		= std::vector<double>(labls.size(), 0);	// Dummy init
+	precision	= std::vector<float>(labls.size(), 0);	// Dummy init
+	recall		= std::vector<float>(labls.size(), 0);	// Dummy init
 	recall2		= std::vector<float>(labls.size() + 1);
 	fpr			= std::vector<float>(labls.size() + 1);
 	TP			= std::vector<size_t>(labls.size());
@@ -45,7 +45,7 @@ void Curves::evalAUPRCandAUROC(double * const out) {
 double Curves::evalAUROC_alt() {
 	size_t tempTP = 0;
 	size_t tempFP = 0;
-	float prevPred = -100.0;
+	float prevPred = -100.0f;
 
 	// - in a loop
 	size_t idx = 0;
@@ -92,11 +92,11 @@ double Curves::evalAUPRC() {
 	recall.push_back(0.0);
 	precision.push_back(1.0);
 	for (size_t i = 0; i < FP.size(); i++) {
-		precision.push_back(TP[i] / (double) (TP[i] + FP[i]));
-		recall.push_back(TP[i] / (double) totP);
+		precision.push_back(TP[i] / (float) (TP[i] + FP[i]));
+		recall.push_back(TP[i] / (float) totP);
 	}
 
-	return traps_integrate<double>(recall, precision);
+	return traps_integrate<float>(recall, precision);
 }
 
 

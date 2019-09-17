@@ -26,7 +26,7 @@ public:
 	template <typename T, typename S>
 		std::vector<T> cumulSum( std::vector<S> inp );
 	template <typename T>
-		double traps_integrate( const std::vector<T> & x, const std::vector<T> & y );
+		double traps_integrate( const std::vector<T> & x, /*const*/ std::vector<T> & y );
 private:
 	const std::vector<uint8_t>	&labls;
 	const double * const 		preds;
@@ -35,8 +35,8 @@ private:
 
 	size_t						totP = 0;
 	size_t						totN = 0;
-	std::vector<double>			precision;
-	std::vector<double>			recall;
+	std::vector<float>			precision;
+	std::vector<float>			recall;
 	std::vector<float>			recall2;
 	std::vector<float>			fpr;
 	std::vector<size_t>			TP;
@@ -114,12 +114,13 @@ std::vector<T> Curves::cumulSum( std::vector<S> inp ) {
 }
 
 template <typename T>
-double Curves::traps_integrate( const std::vector<T> & x, const std::vector<T> & y ) {
+double Curves::traps_integrate( const std::vector<T> & x, /*const*/ std::vector<T> & y ) {
 	double area = 0;
-	for (size_t i = 0; i < x.size() - 1; i++) {
-		if (std::isnan(y[i]) | std::isnan(y[i + 1]))
-			continue;
-		area += ((y[i] + y[i + 1]) * (x[i + 1] - x[i] ) * 0.5);
+	for (size_t i = 0; i < y.size(); i++) {
+		if (std::isnan(y[i]))
+			y[i] = 0;
 	}
+	for (size_t i = 0; i < x.size() - 1; i++)
+		area += ((y[i] + y[i + 1]) * (x[i + 1] - x[i] ) * 0.5);
 	return area;
 }
