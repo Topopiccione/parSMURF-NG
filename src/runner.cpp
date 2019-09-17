@@ -318,17 +318,23 @@ void Runner::subCommCreate(uint8_t &startingFold, uint8_t &endingFold, int &subR
 void Runner::savePredictions() {
 	if (rank == 0) {
 		std::ofstream outFile( commonParams.outFilename.c_str(), std::ios::out );
-		std::for_each( preds.begin(), preds.end(), [&outFile]( double nnn ) { outFile << nnn << " "; } );
-		outFile << std::endl;
+		std::vector<uint8_t> ff;
+		const std::vector<uint8_t> & labss = cache->getLabels();
 		if (commonParams.foldsRandomlyGenerated) {
-			std::vector<uint8_t> ff(commonParams.nn);
+			ff = std::vector<uint8_t>(commonParams.nn);
 			for (uint8_t i = 0; i < organ.org.size(); i++) {
 				std::for_each(organ.org[i].posTest.begin(), organ.org[i].posTest.end(), [&ff, i](size_t val) {ff[val] = i;});
 				std::for_each(organ.org[i].negTest.begin(), organ.org[i].negTest.end(), [&ff, i](size_t val) {ff[val] = i;});
 			}
-			std::for_each( ff.begin(), ff.end(), [&outFile]( uint8_t nnn ) { outFile << (uint32_t) nnn << " "; } );
+		}
+
+		for (size_t i = 0; i < commonParams.nn; i++) {
+			outFile << preds[i] << " " << (uint32_t) labss[i];
+			if (commonParams.foldsRandomlyGenerated)
+				outFile << " " << (uint32_t) ff[i];
 			outFile << std::endl;
 		}
+
 		outFile.close();
 	}
 }
