@@ -173,6 +173,12 @@ void MegaCache::preloadAndPrepareData() {
 		uint8_t * buf = new uint8_t[bufSize];
 		size_t labelCnt = 0;
 
+		// For percentage indicator
+		size_t totEl = (m + 1) * n;
+		size_t step = totEl / 10;
+		size_t nextStep = step;
+		uint32_t percentage = 10;
+
 		// Temporary buffer for data conversion and reminder storage
 		size_t tempBufIdx = 0;
 		char * tempBuf = new char[256];
@@ -214,6 +220,12 @@ void MegaCache::preloadAndPrepareData() {
 			else
 				processBuffer(buf, bufSize, tempBuf, &tempBufIdx, &elementsImported, &labelCnt);
 			dataRead += (bufSize);
+			if (elementsImported > nextStep) {
+				if (rank == 0)
+					LOG(INFO) << TXT_BIYLW << percentage << "\% imported" << TXT_NORML;
+				percentage += 10;
+				nextStep += step;
+			}
 		}
 		ttt.endTime();
 
