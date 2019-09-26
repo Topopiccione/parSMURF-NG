@@ -70,7 +70,8 @@ int main(int argc, char ** argv){
 		ttt.endTime();
 		runnerTime = ttt.duration();
 	}
-	runner.savePredictions();
+	if ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))
+		runner.savePredictions();
 
 	if ((rank == 0) && (commonParams.timeFilename != "")) {
 		// Append computation time to log file, if specified by option 'exec':'timeFile'
