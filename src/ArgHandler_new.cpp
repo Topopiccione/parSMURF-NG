@@ -78,12 +78,16 @@ CommonParams ArgHandle::processCommandLine( int rank ) {
 }
 
 void ArgHandle::jsonImport( std::string cfgFilename ) {
-	try {
-		jsoncons::strict_parse_error_handler err_handler;
-		jsCfg = jsoncons::json::parse_file( cfgFilename, err_handler );
-	} catch (const jsoncons::parse_error& e) {
-		std::cout << e.what() << std::endl;
-	}
+	// try {
+		// jsoncons::strict_parse_error_handler err_handler;
+		// jsoncons::default_json_parsing err_handler;
+		// jsCfg = jsoncons::json::parse_file( cfgFilename, err_handler );
+		std::ifstream cfgJsonFile(cfgFilename.c_str());
+		jsCfg = jsoncons::json::parse(cfgJsonFile);
+		cfgJsonFile.close();
+	// } catch (const jsoncons::ser_error& e) {
+	// 	std::cout << e.what() << std::endl;
+	// }
 
 	jsoncons::json	exec;
 	jsoncons::json	data;
