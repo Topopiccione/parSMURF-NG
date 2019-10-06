@@ -92,6 +92,7 @@ int main(int argc, char ** argv){
 		timeFile.close();
 	}
 
+	LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " arrived at final barrier." << TXT_NORML;
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 

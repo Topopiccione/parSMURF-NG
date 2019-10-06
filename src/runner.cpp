@@ -97,7 +97,7 @@ void Runner::go() {
 		}
 
 		// Evaulate and print the partial AUROC and AUPRC for this fold
-		if ((subRank == 0) & (commonParams.wmode == MODE_CV)) {
+		if ((subRank == 0) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
 			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") evaluating fold auprc" << TXT_NORML;
 			double auroc, auprc;
 			evaluatePartialCurves(localPreds, organ.org[currentFold].posTest, organ.org[currentFold].negTest, &auroc, &auprc);
@@ -116,7 +116,7 @@ void Runner::go() {
 		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") arrived at barrier" << TXT_NORML;
 		MPI_Barrier( subComm );
 	}
-
+	LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier... (line " << __LINE__ << ")" << TXT_NORML;
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// Collect the localPreds from each submaster and move all the predictions to rank 0 in full parallel mode
@@ -124,7 +124,15 @@ void Runner::go() {
 	if ((parallFoldMode == PARALLELFOLDS_FULL) & ((commonParams.wmode == MODE_CV) | (commonParams.wmode == MODE_PREDICT))) {
 		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather" << TXT_NORML;
 		size_t tempSize;
-		for (uint8_t currentFold = commonParams.minFold + 1; currentFold < commonParams.maxFold; currentFold++) {
+		uint8_t startF, endF;
+		if (commonParams.wmode == MODE_CV) {
+			startF = commonParams.minFold + 1;
+			endF   = commonParams.maxFold;
+		} else {
+			startF = 0;
+			endF = 1;
+		}
+		for (uint8_t currentFold = startF; currentFold < endF; currentFold++) {
 			uint8_t idxFold = currentFold - commonParams.minFold;
 			if (rank == subMasterProcs[idxFold]) {
 				LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") sending localPreds to rank 0" << TXT_NORML;
@@ -142,7 +150,7 @@ void Runner::go() {
 				for (size_t i = 0; i < organ.org[currentFold].negTest.size(); i++)
 					preds[organ.org[currentFold].negTest[i]] = predsFromSubRanks[cc++];
 			}
-			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier..." << TXT_NORML;
+			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier... (line " << __LINE__ << ")" << TXT_NORML;
 			MPI_Barrier( MPI_COMM_WORLD );
 		}
 		LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") final gather completed" << TXT_NORML;
@@ -169,6 +177,7 @@ void Runner::go() {
 				for (size_t i = 0; i < preds.size(); i++)
 					preds[i] += predsFromSubRanks[i];
 			}
+			LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier... (line " << __LINE__ << ")" << TXT_NORML;
 			MPI_Barrier( MPI_COMM_WORLD );
 		}
 	}
@@ -179,7 +188,7 @@ void Runner::go() {
 		evaluateFinalCurves(preds, &auroc, &auprc);
 		LOG(INFO) << TXT_BICYA << "Final scores: auroc = " << auroc << "  -  auprc = " << auprc << TXT_NORML;
 	}
-
+	LOG(TRACE) << TXT_BIYLW << "rank: " << rank << " (subRank: " << subRank << ") waiting at barrier... (line " << __LINE__ << ")" << TXT_NORML;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
