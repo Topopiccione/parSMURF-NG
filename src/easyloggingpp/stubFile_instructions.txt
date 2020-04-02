@@ -1,0 +1,6 @@
+Those files are stub, needed by cmake for correctly configure the makefile.
+Both files are empty and will be overwritten by cmake, once easylogging++ repository is cloned.
+
+The command for untracking the mods over these files were:
+git update-index --skip-worktree src/easyloggingpp/easylogging++.cc
+git update-index --skip-worktree src/easyloggingpp/easylogging++.h
