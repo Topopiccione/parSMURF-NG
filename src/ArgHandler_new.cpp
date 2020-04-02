@@ -3,15 +3,15 @@
 #include "ArgHandler_new.h"
 #include <getopt.h>
 
-ArgHandle::ArgHandle( int argc, char **argv, std::vector<GridParams> &gridParams ) :
-		gridParams( gridParams ),
-		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), forestDirname( "" ), timeFilename( "" ), extConfigFilename( "" ),
-		seed( 0 ), verboseLevel(0),
-		ensThreads( 0 ), oversmpThreads(0), rfThreads( 0 ), wmode( MODE_CV ), woptimiz( OPT_NO ), strCacheSize( "" ),
-		generateRandomFold( false ), readNFromFile( false ), verboseMPI( false ),
-		externalConfig( false ), printCurrentConfig( false ),
-		hoProportion( 0.0f ), minFold( -1 ), maxFold( -1 ),
-		argc( argc ), argv( argv ), mode( "" ), optim( "" ) {
+ArgHandle::ArgHandle(int argc, char ** argv, std::vector<GridParams> &gridParams) :
+		gridParams(gridParams),
+		dataFilename(""), foldFilename(""), labelFilename(""), outFilename(""), forestDirname(""), timeFilename(""), extConfigFilename(""),
+		seed(0), verboseLevel(0),
+		ensThreads(0), oversmpThreads(0), rfThreads(0), wmode(MODE_CV), woptimiz(OPT_NO), strCacheSize(""),
+		generateRandomFold(false), readNFromFile(false), verboseMPI(false),
+		externalConfig(false), printCurrentConfig(false),
+		hoProportion(0.0f), minFold(-1), maxFold(-1),
+		argc(argc), argv(argv), mode(""), optim("") {
 }
 
 ArgHandle::~ArgHandle() {}
@@ -78,16 +78,9 @@ CommonParams ArgHandle::processCommandLine( int rank ) {
 }
 
 void ArgHandle::jsonImport( std::string cfgFilename ) {
-	// try {
-		// jsoncons::strict_parse_error_handler err_handler;
-		// jsoncons::default_json_parsing err_handler;
-		// jsCfg = jsoncons::json::parse_file( cfgFilename, err_handler );
-		std::ifstream cfgJsonFile(cfgFilename.c_str());
-		jsCfg = jsoncons::json::parse(cfgJsonFile);
-		cfgJsonFile.close();
-	// } catch (const jsoncons::ser_error& e) {
-	// 	std::cout << e.what() << std::endl;
-	// }
+	std::ifstream cfgJsonFile(cfgFilename.c_str());
+	jsCfg = jsoncons::json::parse(cfgJsonFile);
+	cfgJsonFile.close();
 
 	jsoncons::json	exec;
 	jsoncons::json	data;
@@ -481,8 +474,9 @@ void ArgHandle::printLogo() {
 	std::cout << "\033[38;5;218m ██║     ██║  ██║██║  ██║███████║██║ ╚═╝ ██║╚██████╔╝██║  ██║██║         ██║ ╚████║╚██████╔╝\e[0m" << std::endl;
 	std::cout << "\033[38;5;218m ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝         ╚═╝  ╚═══╝ ╚═════╝\e[0m" << std::endl;
 	std::cout << "____________________________________________________________________________________________" << std::endl << std::endl;
-	std::cout << "                   AnacletoLab - Universita' degli studi di Milano - 2019" << std::endl;
-	std::cout << "                           http://github.com/AnacletoLAB/parSMURF" << std::endl;
+	std::cout << "                                     Alessandro Petrini                                     " << std::endl;
+	std::cout << "                   AnacletoLab - Universita' degli studi di Milano - 2019                   " << std::endl;
+	std::cout << "                          http://github.com/AnacletoLAB/parSMURF-NG                         " << std::endl;
 	std::cout << "____________________________________________________________________________________________" << std::endl << std::endl;
 }
 
