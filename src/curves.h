@@ -113,6 +113,8 @@ std::vector<T> Curves::cumulSum( std::vector<S> inp ) {
 	return tbr;
 }
 
+// Modified from curves.h of parSMURF as that one resulted in wrong results
+// when compiled for XeonPhi w/t optimization == 3
 template <typename T>
 double Curves::traps_integrate( const std::vector<T> & x, /*const*/ std::vector<T> & y ) {
 	double area = 0;
