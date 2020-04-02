@@ -59,23 +59,6 @@ FILE(GLOB_RECURSE RANGER	"ranger/*.cpp")
 SET(LOGGERSRC 				"easyloggingpp/easylogging++.cc")
 SET(SOURCESMAIN				"parSMURFng.cpp")
 
-
-# if(NOT CMAKE_BUILD_TYPE)
-# 	set(CMAKE_BUILD_TYPE Release)
-# 	MESSAGE("____ RELEASE MODE ____")
-# endif()
-#
-# ADD_CUSTOM_TARGET(Debug
-# 	COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
-# 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-# 	COMMENT "Switch CMAKE_BUILD_TYPE to Debug"
-# )
-# ADD_CUSTOM_TARGET(Release
-# 	COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
-# 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-# 	COMMENT "Switch CMAKE_BUILD_TYPE to Release"
-# )
-
 add_executable(parSMURFng ${SRCCOMMON} ${RANGER} ${SOURCESMAIN} ${LOGGERSRC})
 add_dependencies(parSMURFng ANN)
 add_dependencies(parSMURFng jsoncons)
