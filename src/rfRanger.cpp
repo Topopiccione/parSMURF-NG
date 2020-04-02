@@ -1,9 +1,9 @@
-// parSMURFng// parSMURF
+// parSMURFng
 // Alessandro Petrini, 2018-2019
 // 2019 - Alessandro Petrini - AnacletoLAB - Universita' degli Studi di Milano
 #include "rfRanger.h"
 
-// I valori sono quelli di default in entrambi i costruttori
+// Default values for both constructors [02/Apr/2020: whatever it means]
 rfRanger::rfRanger( const uint32_t m, const bool prediction_mode, std::unique_ptr<Data> data, const uint32_t numTrees, uint32_t mtry, uint32_t rfThrd, uint32_t seed ) :
 		dependent_variable_name("Labels"),
 		mtry( mtry ),
