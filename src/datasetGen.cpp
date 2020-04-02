@@ -4,6 +4,7 @@
 #include <random>
 #include <fstream>
 
+//// Original R scritp follows
 /*
 ######################################################################
 # Function to generate synthetic imbalanced data
