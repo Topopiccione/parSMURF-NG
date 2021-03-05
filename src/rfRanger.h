@@ -30,6 +30,7 @@ public:
 	void train( bool verbose );
 	void predict( bool verbose );
 	void saveForest( size_t nPart, std::string forestDirname );
+	void saveImportance(size_t nPart, std::string forestDirname);
 
 	Forest							*	forest;
 	ForestProbability				*	forestPred;

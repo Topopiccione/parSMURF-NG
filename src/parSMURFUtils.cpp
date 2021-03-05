@@ -26,6 +26,23 @@ std::vector<std::string> generateNames(const size_t n) {
 	return out;
 }
 
+std::vector<std::string> generateOrderedNames(const size_t n) {
+	std::vector<std::string> out(n);
+	const int slen = 8;
+	std::ostringstream ss;
+
+	for (int i = 0; i < n; i++) {
+	    ss.str(std::string());
+	    int32_t expp;
+	    i != 0 ? expp = (uint32_t) log10(i) : expp = 0;
+		for (int o = 7; o > expp; o--)
+			ss << "0";
+		ss << std::to_string(i);
+		out[i] = ss.str();
+	}
+	return out;
+}
+
 std::vector<std::string> split_str(std::string s, std::string delimiters) {
 	std::vector<std::string> toBeRet;
 	size_t current;

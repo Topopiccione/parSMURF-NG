@@ -24,7 +24,7 @@ hyperSMURFcore::hyperSMURFcore(CommonParams commonParams, GridParams gridParams,
 	rfTrain			= nullptr;
 	rfTest			= nullptr;
 
-	nomi = generateNames( m + 1 );
+	nomi = generateOrderedNames( m + 1 );
 }
 
 void hyperSMURFcore::train(std::vector<size_t> &posIdxIn, std::vector<size_t> &negIdxIn) {
@@ -120,4 +120,5 @@ void hyperSMURFcore::copySamplesInLocalData(const size_t howMany, const std::vec
 
 void hyperSMURFcore::saveTrainedForest(size_t currentPart) {
 	rfTrain->saveForest(currentPart, commonParams.forestDirname);
+	rfTrain->saveImportance(currentPart, commonParams.forestDirname);
 }

@@ -10,6 +10,8 @@
 #include <fstream>
 #include <chrono>
 #include <iostream>
+#include <sstream>
+#include <cmath>
 #include <mpi.h>
 
 // ANSI console command for text coloring
@@ -114,6 +116,7 @@ struct CommonParams {
 // Various utility functions
 std::vector<std::string> generateRandomName(const int n);
 std::vector<std::string> generateNames(const size_t n);
+std::vector<std::string> generateOrderedNames(const size_t n) ;
 std::vector<std::string> split_str(std::string s, std::string delimiters);
 void printData(const double * const xx, const uint32_t * const yy, const size_t nn, const size_t mm, const bool printLabels );
 void checkLoggerConfFile();
