@@ -158,7 +158,7 @@ void Forest::initR(std::string dependent_variable_name, std::unique_ptr<Data> in
 
   //// ALE: adding loadFromFile from initCpp for importing forests in predict mode
   if ((prediction_mode) & !load_forest_filename.empty()){
-	loadFromFile(load_forest_filename);
+	  loadFromFile(load_forest_filename);
   }
 
   // Set variables to be always considered for splitting
