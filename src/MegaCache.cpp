@@ -73,8 +73,10 @@ MegaCache::~MegaCache() {}
 void MegaCache::detectNumberOfFeatures() {
 	if (binaryMode) {
 		std::ifstream dataFile( dataFilename.c_str(), std::ios::binary );
-		if (!dataFile)
-			throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
+		if (!dataFile) {
+			std::cout <<  TXT_BIRED + std::string("Error opening data file.") + TXT_NORML << std::endl;
+			std::exit(-1);
+		}
 
 		if (rank == 0)
 			LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": Detecting the number of features from data..." << TXT_NORML;
@@ -89,8 +91,10 @@ void MegaCache::detectNumberOfFeatures() {
 		dataFile.close();
 	} else {
 		std::ifstream dataFile( dataFilename.c_str(), std::ios::in );
-		if (!dataFile)
-			throw std::runtime_error( TXT_BIRED + std::string("Error opening data file.") + TXT_NORML );
+		if (!dataFile) {
+			std::cout <<  TXT_BIRED + std::string("Error opening data file.") + TXT_NORML << std::endl;
+			std::exit(-1);
+		}
 
 		// 1) detecting the number of columns
 		if (rank == 0)
@@ -129,8 +133,10 @@ void MegaCache::loadLabels(std::vector<uint8_t> &dstVect, size_t * valsRead, siz
 	}
 
 	std::ifstream labelFile( labelFilename.c_str(), std::ios::in );
-	if (!labelFile)
-		throw std::runtime_error( TXT_BIRED + std::string("Error opening label file.") + TXT_NORML );
+	if (!labelFile) {
+			std::cout <<  TXT_BIRED + std::string("Error opening label file.") + TXT_NORML << std::endl;
+			std::exit(-1);
+		}
 
 	LOG(TRACE) << TXT_BIBLU << "Rank " << rank << ": reading label file..." << TXT_NORML;
 	while (labelFile >> inData) {

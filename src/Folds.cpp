@@ -70,8 +70,10 @@ void Folds::readFoldsFromFile(const std::string foldFilename, size_t &n, uint8_t
 	dstVect.clear();
 
 	std::ifstream foldFile( foldFilename.c_str(), std::ios::in );
-	if (!foldFile)
-		throw std::runtime_error( TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML );
+	if (!foldFile) {
+		std::cout <<  TXT_BIRED + std::string("Error opening fold file.") + TXT_NORML << std::endl;
+		std::exit(-1);
+	}
 
 	LOG(TRACE) << TXT_BIBLU << "Reading fold file..." << TXT_NORML;
 	nFolds = 0;
