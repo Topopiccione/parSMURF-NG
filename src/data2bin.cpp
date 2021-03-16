@@ -72,6 +72,8 @@ int main(int argc, char ** argv) {
 	fout << bytes[3] << bytes[2] << bytes[1] << bytes[0];
 	cnt++;
 
+	// CLAMOROSAMENTE BACATO... Non gestisce i NaN
+	/*
 	while (fin >> inData) {
 		iddd = *(reinterpret_cast<uint32_t*>(&inData));
 		bytes[0] = (iddd >> 24) & 0xFF;
@@ -82,6 +84,27 @@ int main(int argc, char ** argv) {
 		cnt++;
 		if ((cnt % 500000) == 0)
 			std::cout << cnt << std::endl;
+	}*/
+
+	while(!fin.eof()) {
+		std::string line;
+		std::getline(fin, line);
+		std::vector<std::string> splittedBuffer = split_str(line, " ,\n" );
+
+		for(const std::string& element : splittedBuffer) {
+			//std::cout << element << " ";
+        	inData = std::strtof(element.c_str(), nullptr);
+			//std::cout << inData << std::endl;
+			iddd = *(reinterpret_cast<uint32_t*>(&inData));
+			bytes[0] = (iddd >> 24) & 0xFF;
+			bytes[1] = (iddd >> 16) & 0xFF;
+			bytes[2] = (iddd >>  8) & 0xFF;
+			bytes[3] =  iddd        & 0xFF;
+			fout << bytes[3] << bytes[2] << bytes[1] << bytes[0];
+			cnt++;
+			if ((cnt % 500000) == 0)
+				std::cout << cnt << std::endl;
+		}
 	}
 
 	fin.close();
