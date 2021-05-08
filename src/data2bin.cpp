@@ -103,10 +103,11 @@ int main(int argc, char ** argv) {
 			fout << bytes[3] << bytes[2] << bytes[1] << bytes[0];
 			cnt++;
 			if ((cnt % 500000) == 0)
-				std::cout << cnt << std::endl;
+				std::cout << "\r" << cnt << std::flush;
 		}
 	}
 
+	std::cout << std::endl;
 	fin.close();
 	fout.close();
 	return 0;
