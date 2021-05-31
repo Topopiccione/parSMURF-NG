@@ -1,4 +1,5 @@
 build
+build_extratrees
 src/jsoncons/config
 src/jsoncons/detail
 src/jsoncons/*.hpp
