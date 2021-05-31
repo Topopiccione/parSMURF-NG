@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
 	float inData;
 	uint32_t iddd;
 	char bytes[4];
-	size_t cnt = 0;
+	size_t cnt = 0, nlines = 0;
 
 	// Save the number of columns as first element
 	bytes[0] = (columns >> 24) & 0xFF;
@@ -89,6 +89,7 @@ int main(int argc, char ** argv) {
 	while(!fin.eof()) {
 		std::string line;
 		std::getline(fin, line);
+		nlines++;
 		std::vector<std::string> splittedBuffer = split_str(line, " ,\n" );
 
 		for(const std::string& element : splittedBuffer) {
@@ -107,7 +108,7 @@ int main(int argc, char ** argv) {
 		}
 	}
 
-	std::cout << std::endl;
+	std::cout << std::endl << "Lines: " << nlines << " - elements: " << cnt << std::endl;
 	fin.close();
 	fout.close();
 	return 0;
