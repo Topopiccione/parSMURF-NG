@@ -24,7 +24,7 @@
 INITIALIZE_EASYLOGGINGPP
 
 int main(int argc, char ** argv){
-	START_EASYLOGGINGPP(argc, argv);
+	//START_EASYLOGGINGPP(argc, argv);
 	int	rank = 0;
 	int worldSize = 1;
 
@@ -36,7 +36,10 @@ int main(int argc, char ** argv){
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	////EasyLogging++
-	checkLoggerConfFile();
+	if (rank == 0)
+		checkLoggerConfFile();
+	MPI_Barrier(MPI_COMM_WORLD);
+	START_EASYLOGGINGPP(argc, argv);
 	el::Configurations conf("logger.conf");
 	el::Loggers::reconfigureLogger("default", conf);
 	el::Loggers::reconfigureAllLoggers(conf);
