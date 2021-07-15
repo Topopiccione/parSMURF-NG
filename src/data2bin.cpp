@@ -47,8 +47,16 @@ int main(int argc, char ** argv) {
 	if (argc < 2) {
 		std::cout << "usage:" << std::endl;
 		std::cout << "data2bin <dataFile.txt>" << std::endl;
+		std::cout << "data2bin <dataFile.txt> <0> to remove the header" << std::endl;
 		exit(0);
 	}
+
+	std::cout << argc << std::endl;
+
+	bool headerless = true;
+	if ((argc == 3) && (argv[2][0] == '0'))
+		headerless = false;
+	
 
 	std::string dataFilename(argv[1]);
 	std::string outFilename = dataFilename.substr(0, dataFilename.size() - 4) + ".bin";
@@ -70,7 +78,7 @@ int main(int argc, char ** argv) {
 	bytes[2] = (columns >>  8) & 0xFF;
 	bytes[3] =  columns        & 0xFF;
 	fout << bytes[3] << bytes[2] << bytes[1] << bytes[0];
-	cnt++;
+	//cnt++;
 
 	// CLAMOROSAMENTE BACATO... Non gestisce i NaN
 	/*
@@ -85,6 +93,12 @@ int main(int argc, char ** argv) {
 		if ((cnt % 500000) == 0)
 			std::cout << cnt << std::endl;
 	}*/
+
+	// Skip the header if present
+	std::string line22;
+	if (!headerless)
+		std::getline(fin, line22);
+
 
 	while(!fin.eof()) {
 		std::string line;
