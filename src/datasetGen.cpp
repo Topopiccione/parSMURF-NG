@@ -114,16 +114,20 @@ int main(int argc, char ** argv) {
 		for (size_t j = 0; j < nInfFeats; j++)
 			dataFile << disxInfPos(gen) << " ";
 			// dataFile << "p" << " ";
-		for (size_t j = 0; j < (nFeats - nInfFeats); j++)
-			dataFile << disxNegAndNotInfPos(gen) << " ";
-			// dataFile << "q" << " ";
+		for (size_t j = 0; j < (nFeats - nInfFeats); j++) {
+			dataFile << disxNegAndNotInfPos(gen);
+			if (j != (nFeats - nInfFeats - 1))
+				dataFile << " ";
+		}
 		dataFile << std::endl;
 	}
 	// End with the negatives
 	for (size_t i = 0; i < nNeg; i++) {
-		for (size_t j = 0; j < nFeats; j++)
-			dataFile << disxNegAndNotInfPos(gen) << " ";
-			// dataFile << "n" << " ";
+		for (size_t j = 0; j < nFeats; j++) {
+			dataFile << disxNegAndNotInfPos(gen);
+			if (j != nFeats - 1)
+				dataFile << " ";
+		}
 		dataFile << std::endl;
 	}
 	dataFile.close();
