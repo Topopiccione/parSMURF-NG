@@ -261,40 +261,13 @@ Note that the autotuning of the learning parameters is available only for "cv" m
 Mandatory: yes\
 This field contains all the required information for accessing data from and to the system.
 
-
-```
-	"dataFile": string
-```
-Mandatory: Yes (No if simulation mode is enabled)\
-Input data file. Must be either a tsv/csv file or it binarized version generated with the data2bin utility.
-
-
-```
-	"foldFile": string
-```
-Mandatory: No\
-Optional input file containing the fold division of the dataset
-
-
-```
-	"labelFile": string
-```
-Mandatory: Yes (No, if simulation mode is enabled)\
-Input file containing the labels of the examples of the dataset
-
-
-```
-	"outFile": string
-```
-Mandatory: Yes (No, if in train mode)\
-Output file containing the output predictions
-
-
-```
-	"forestDir": string
-```
-Mandatory: No (Yes, if in train mode)\
-Output directory for saving the trained models. Must be a valid directory on the filesystem.
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"dataFile"|string|Yes|-|Input data file. Must be either a tsv/csv file or it binarized version generated with the data2bin utility|
+|"foldFile"|string|No|-|Optional input file containing the fold division of the dataset|
+|"labelFile"|string|Yes, unless in simulation mode|-|Input file containing the labels of the examples of the dataset|
+|"outFile"|string|Only in cv and test modes|-|Output file containing the output predictions|
+|"forestDir"|string|Only in train and test modes|-|Output directory for saving / loading the trained models. Must be a valid directory on the filesystem|
 
 
 ##### "simulate"
@@ -309,33 +282,12 @@ Output directory for saving the trained models. Must be a valid directory on the
 Mandatory: no\
 This field contains all the required information for enabling the internal dataset generator
 
-
-```
-	"simulation": bool
-```
-Mandatory: No\
-On true, it enables the internal dataset generator. The fields "dataFile", "foldFile" and "labelFile" are ignored and a random dataset is generated.
-
-
-```
-	"prob": float
-```
-Mandatory: Yes if simulation mode is enabled\
-This field represent the probability of generating a positive example. Must be a float in the [0,1] range, possibly very small for simulating highly unbalanced datasets
-
-
-```
-	"n": int
-```
-Mandatory: Yes if simulation mode is enabled\
-Number of examples to be generated
-
-
-```
-	"m": int
-```
-Mandatory: Yes if simulation mode is enabled\
-Number of features to be generated
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"simulation"|bool|No|false|On true, it enables the internal dataset generator. The fields "dataFile", "foldFile" and "labelFile" are ignored and a random dataset is generated|
+|"prob"|float|only in simulation mode|-|This field represent the probability of generating a positive example. Must be a float in the [0,1] range, possibly very small for simulating highly unbalanced datasets|
+|"n"|int|only in simulation mode|-|Number of examples to be generated|
+|"m"|in|only in simulation mode|-|Number of features per sample to be generated|
 
 
 ##### "folds"
@@ -349,21 +301,11 @@ Number of features to be generated
 Mandatory: Yes (No, if "foldFile" specified)\
 This section specified the fold subdivision and to which fold execute the run.
 
-
-```
-	"nFolds": int
-```
-Mandatory: Yes (No, if "foldFile" specified)\
-This field specifies in how many folds the dataset should be subdivided into. Ignored if "foldFile" has been declared.
-
-
-```
-	"startingFold": int,
-	"endingFold": int
-```
-Mandatory: No\
-These fields specify the starting and ending fold that parSMURF have to evaluate. This is useful for parallelizing runs across different folds. If unspecified, parSMURF performs the evaluation of the predictions on all folds.
-
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"nFolds"|int|Yes, unless a "foldFile" is specified|-|Specifies how many folds the dataset should be subdivided into. Ignored if "foldFile" has been declared|
+|"startingFold"|int|No|-|These fields specify the starting and ending fold that parSMURF have to evaluate. This is useful for parallelizing runs across different folds. If unspecified, parSMURF performs the evaluation of the predictions on all folds|
+|"startingFold"| | | | |
 
 ##### "params"
 ```
@@ -382,53 +324,14 @@ When "optimizer" is set to "no", only one combination is used for the run.\
 When "optimizer" is set to "grid", parSMURF-NG generates all the possible hyper-parameter combinations and evaluate them in the internla CV / HO loop.\
 For a deeper explanation of each parameter, please refer to the article
 
-
-```
-	"nParts": array of int
-```
-Mandatory: Yes\
-Number of partitions (ensembles)\
-Default: 10
-
-
-```
-	"fp": array of int
-```
-Mandatory: Yes\
-Over-sampling factor (0 disables over-sampling)\
-Default: 1
-
-
-```
-	"ratio": array of int
-```
-Mandatory: Yes\
-Under-sampling factor (0 disables under-sampling)\
-Defaul: 1
-
-
-```
-	"k": array of int
-```
-Mandatory: Yes\
-Number of the nearest neighbors for SMOTE oversampling of the minority class\
-Default: 5
-
-
-```
-	"nTrees": array of int
-```
-Mandatory: Yes\
-Number of trees in each ensemble\
-Default: 10
-
-
-```
-	"mtry": array of int
-```
-Mandatory: Yes\
-mtry random forest parameter\
-Default: sqrt(m)
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"nParts"|array of int|Yes|10|Number of partitions (ensembles)|
+|"fp"|array of int|Yes|1|Oversampling factor (0 disables over-sampling)|
+|"ratio"|array of int|Yes|1|Undersampling factor (0 disables under-sampling)|
+|"k"|array of int|Yes|5|Number of the nearest neighbors for SMOTE oversampling of the minority class|
+|"nTrees"|array of int|Yes|10|Number of trees in each ensemble|
+|"mtry"|array of int|Yes|sqrt(m)|mtry random forest parameter|
 
 
 ---
