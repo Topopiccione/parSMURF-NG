@@ -175,7 +175,7 @@ If it has been installed in a virtual environment or conda, just activate the vi
 parSMURF-NG uses configuration files in json format for setting the parameters of each run.\
 Examples of configuration files are available in the cfgEx folder of the repository.
 
-A configuration file is composed by seven dictionaries:
+A configuration file is composed by five dictionaries:
 ```
 {
 	"name": ...,
@@ -189,11 +189,10 @@ A configuration file is composed by seven dictionaries:
 Depending on the configuration itself, some dictionaries are not mandatory and can be left out.
 
 ##### "name"
-```
-	"name": string
-```
-Mandatory: no\
-A string for labeling the name of the experiment
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"name"|string|No|-|A string for labeling the name of the experiment|
+
 
 ##### "exec"
 ```
@@ -215,121 +214,39 @@ A string for labeling the name of the experiment
 Mandatory: yes\
 General configuration of the run.
 
+| Name | Type | Mandatory | Default | Description |
+|-|-|-|-|-|
+|"name"|string|No|-|Label used for marking the name of the executable (legacy from parSMURF1 and parSMURFn). It does not affect the computation itself, since this field is ignored by the json parser|
+|"nProcs"|int|No|-|Label used for marking the number of processes for a run of parSMURFn. It does not affect the computation itself, since the total number of processes is detected at runtime by the MPI APIs.|
+|"ensThrd"|int|Yes|1|Number of threads assigned to perform the partition processing|
+|"oversmpThrd"|int|Yes|1|Number of threads assigned to data oversampling|
+|"rfThrd"|int|Yes|1|Number of threads assigned to perform the random forest train and test|
+|"noMtSender"|-|No|-|Legacy, ignored in parSMURF-NG|
+|"seed"|int|No|-|Optional seed for the random number generators. If unspecified, a random seed is used|
+|"verboseLevel"|int|No|0|Level of verbosity on stdout and on the logfile of the computational task. Range is 0-3|
+|"verboseMPI"|bool|No|false|Verbose on stdout and logfile the calls to MPI APIs|
+|"saveTime"|bool|No|false|Option for saving a report of the computation time of the run|
+|"timeFile"|string|Yes, if "saveTime" is true|-|File name of the execution time report|
+|"cacheSize"|string|Yes|-|This parameter specifies the cache size for data storage (1)|
+|"printCfg"|bool|No|false|Option for printing a detailed description of the run before it starts|
+|"mode"|string|Yes|"cv"|Execution mode (2)|
+|"optimizer"|string|Yes|"no"|Execution mode (3)|
 
-```
-	"name": string
-```
-Mandatory: No\
-Label used for marking the name of the executable (legacy from parSMURF1 and parSMURFn). It does not affect the computation itself, since this field is ignored by the json parser
-
-
-```
-	"nProcs": int
-```
-Mandatory: No\
-Label used for marking the number of processes for a run of parSMURFn. It does not affect the computation itself, since the total number of processes is detected at runtime by the MPI APIs.
-
-
-```
-	"ensThrd": int
-```
-Mandatory: Yes\
-Number of threads assigned to perform the partition processing.
-
-
-```
-    "oversmpThrd"
-```
-Mandatory: Yes\
-Number of threads assigned to perform data oversampling.
-
-
-```
-	"rfThrd": int
-```
-Mandatory: Yes\
-Number of threads assigned to perform the random forest train and test.
-
-
-```
-	"noMtSender": bool
-```
-Mandatory: No\
-Legacy, ignored in parSMURF-NG
-
-
-```
-	"seed": int
-```
-Mandatory: No\
-Optional seed for the random number generators. If unspecified, a random seed is generated.
-
-
-```
-	"verboseLevel": int
-```
-Mandatory: No\
-Level of verbosity on stdout and on the logfile of the computational task. Range is 0-3 (default: 0).
-
-
-```
-	"verboseMPI": bool
-```
-Mandatory: No\
-Verbose on stdout and logfile the calls to MPI APIs. (Default: false)
-
-
-```
-	"saveTime": bool
-```
-Mandatory: No\
-Option for saving a report of the computation time of the run (Default: false)
-
-
-```
-	"timeFile": string
-```
-Mandatory: Yes, if "saveTime" is set to true\
-File name for saving the execution time report
-
-
-```
-	"cacheSize": string
-```
-Mandatory: Yes\
-This parameter specifies the cache size for data storage. Reserved for a future extension of the software to limit the data required for storing the dataset and allow parSMURF-NG to dinamically load the required data from disk. As this feature is not present, cache size must be equal or larger than the size of the input dataset (excluding the label and fold files).\
+(1): Reserved for a future extension of the software to limit the data required for storing the dataset and allow parSMURF-NG to dinamically load the required data from disk. As this feature is not present, cache size must be equal or larger than the size of the input dataset (excluding the label and fold files).\
 Example: "cacheSize": "4.2G"
 
-
-```
-	"printCfg": bool
-```
-Mandatory: No\
-Option for printing a detailed description of the run before it starts (Default: false)
-
-
-```
-	"mode": string
-```
-Mandatory: Yes\
-Execution mode. Allowed strings are:\
+(2): Allowed strings are:\
 "cv": Dataset is splitted in folds, and evaluated in a process of k-fold cross validation. The run returns a set of predictions (default).\
 "train": The whole dataset is treated as training set. The run returns a folder of trained models for later usage.\
 "test": The whole dataset is treated as test set. It is mandatory to submit a directory of trained models to perform the evaluation. The run returns a set of predictions.\
 Note that the autotuning of the learning parameters is available only for "cv" mode
 
-
-```
-	"optimizer": string
-```
-Mandatory: Yes\
-Execution mode. Allowed strings are:\
+(3): Allowed strings are:\
 "no": external cross-validation only (default)\
 "grid_cv": automatic tuning of the learning parameters by grid search in the internal cross validation loop\
 "autogp_cv": automatic tuning of the learning parameters by Bayesian optimization (Gaussian process) in the internal cross validation loop\
 "grid_ho": automatic tuning of the learning parameters by grid search in the internal hold-out\
 "autogp_ho": automatic tuning of the learning parameters by Bayesian optimization (Gaussian process) in the internal hold-out
-
 
 ##### "data"
 ```
