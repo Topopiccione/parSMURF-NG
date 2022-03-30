@@ -1,0 +1,35 @@
+{
+  "name": "parSMURFng sample config 01",
+  "exec": {
+    "name": "parSMURFng",
+    "nProcs": 1,
+    "ensThrd": 4,
+    "oversmpThrd": 1,
+    "rfThrd": 1,
+    "noMtSender": false,
+    "seed": 123547,
+    "verboseLevel": 1,
+    "verboseMPI": false,
+    "saveTime": true,
+    "timeFile": "timeout.txt",
+    "printCfg": true,
+    "mode": "cv",
+    "optimizer": "no"
+  },
+  "data": {
+    "dataFile": "data.txt",
+    "labelFile": "label.txt",
+    "outFile": "predictions_01.txt"
+  },
+  "folds": {
+    "nFolds": 5
+  },
+  "params": {
+    "nParts": [4],
+    "fp": [3],
+    "ratio": [3],
+    "k": [3],
+    "nTrees": [25],
+    "mtry": [0]
+  }
+}
