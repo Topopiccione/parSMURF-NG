@@ -235,7 +235,11 @@ void MegaCache::preloadAndPrepareData() {
 		}
 		ttt.endTime();
 
-		LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << elementsImported << " elements imported " << TXT_NORML;
+		// This 'else' condition fixed a bug that reported a wrong number of imported values in plain text mode
+		if (binaryMode)
+			LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << elementsImported << " elements imported " << TXT_NORML;
+		else 
+			LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": " << elementsImported - n << " elements imported " << TXT_NORML;
 		LOG(INFO) << TXT_BIGRN << "Rank " << rank << ": MPI import time = " << ttt.duration() << TXT_NORML;
 
 		delete[] tempBuf;
