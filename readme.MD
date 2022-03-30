@@ -137,6 +137,7 @@ iter = 0
 ```
 
 Both strategies are performed in a context of internal cross validation / hold-out.
+
 ---
 
 ### Running parSMURF-NG
