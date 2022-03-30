@@ -355,10 +355,10 @@ n4 |                          ( 1 )
 .  |
 ```
 As now, the file format is very strict, and data passed to the application should obey to these rules:\
-- Each value must be separated by a single space. Each sample n should be entirely contained in a single line.\
-- Lines are terminated by a single new-line character ('\n').\
-- Empty fields are not allowed.\
-- The file must not contain an header.\
+- Each value must be separated by a single space. Each sample n should be entirely contained in a single line.
+- Lines are terminated by a single new-line character ('\n').
+- Empty fields are not allowed.
+- The file must not contain an header.
 The number of features is automatically detected.
 
 We can consider to relax some of these restrictions in future releases. As now, the file format is almost the same as csv, but with no header and values are separated by spaces instead of commas.
@@ -406,21 +406,21 @@ We also provide a test set created with the following command:
 ./datasetGen 15 85 15 5 2.5 data_test.txt label_test.txt 32
 ```
 
-*cfg_cv.json* performs a 5-fold cross validation on data.txt using the following parameters:/
+**cfg_cv.json** performs a 5-fold cross validation on data.txt using the following parameters:/
 ```
 "nParts": [4], "fp": [3], "ratio": [3], "k": [3], "nTrees": [25], "mtry": [0]
 ```
 Execution is single-threaded. Results are saved on predictions_01.txt (3 columns, as folds are randomly generated).
 
-*cfg_cv_mt.json* is the same task as cfg_cv.json, but partition computation is distributed over 4 threads
+**cfg_cv_mt.json** is the same task as cfg_cv.json, but partition computation is distributed over 4 threads
 
-*cfg_train.json* treats data.txt entirely as training set. It trains a model and saves it on "savedModels" directory. The following parameters are used:
+**cfg_train.json** treats data.txt entirely as training set. It trains a model and saves it on "savedModels" directory. The following parameters are used:
 ```
 "nParts": [4], "fp": [3], "ratio": [3], "k": [3], "nTrees": [15], "mtry": [0]
 ```
 No prediction is performed.
 
-*cfg_predict.json* uses the saved model from cfg_train.json for predicting the values of the data_test.txt and label_test.txt.
+**cfg_predict.json** uses the saved model from cfg_train.json for predicting the values of the data_test.txt and label_test.txt.
 It loads the model from the "savedModels" directory. Predictions are saved on "predictions_test.txt" file.
 
 ---
